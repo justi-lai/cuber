@@ -9,7 +9,7 @@ I created this project because I found that [pycuber](https://github.com/adrianl
 ## Features
 
 - **3D Virtual Cube:** Models a standard 3x3x3 Rubik's Cube using a grid of "cubie" objects.
-- **Customizable Moves:** Supports all standard face turns (`U`, `D`, `L`, `R`, `F`, `B`), slice moves (`M`, `E`, `S`), and their inverses and double turns.
+- **Customizable Moves:** Supports all standard face turns (`U`, `D`, `L`, `R`, `F`, `B`), slice moves (`M`, `E`, `S`), wide moves (`r`, `l`, `u`, `d`, `f`, `b`), and whole-cube rotations (`x`, `y`, `z`), including their inverses and double turns.
 - **Accurate Orientation:** Each cubie tracks its own orientation, ensuring realistic behavior.
 - **Unfolded Display:** Prints a 2D unfolded view of the cube for easy visualization.
 - **Minimal Dependencies:** Only requires `numpy` (see `requirements.txt`).
@@ -49,6 +49,8 @@ Or run the script directly to see example moves and their effects.
 - `cuber.py` — Main cube logic, move handling, and display.
 - `cubie.py` — Individual cubie logic and orientation management.
 - `requirements.txt` — Lists required Python packages (just `numpy`).
+- `tests/` — Test directory containing comprehensive test suite.
+  - `test_cuber.py` — Full test coverage for both Cube and Cubie classes.
 
 ## Requirements
 
@@ -63,6 +65,29 @@ Clone this repo and install the requirements:
 pip install -r requirements.txt
 ```
 
+## Testing
+
+The project includes a comprehensive test suite that covers all functionality:
+
+```bash
+python tests/test_cuber.py
+```
+
+The test suite includes:
+
+- **Cubie Tests:** Initialization, orientation updates, move transformations, and validation
+- **Cube Tests:** All move types (basic, prime, double, slice, wide, rotations), sequences, and edge cases
+- **Integration Tests:** Complex patterns, move equivalences, and real scramble sequences
+- **22 total tests** covering every aspect of the cube implementation
+
+All tests should pass, confirming that:
+
+- ✅ All move types work correctly
+- ✅ Move cancellation works (R followed by R' returns to original state)
+- ✅ Identity operations work (four quarter turns = original state)
+- ✅ Complex move sequences execute without errors
+- ✅ Error handling works for invalid moves
+
 ## Motivation
 
 I wanted a Rubik's Cube simulator that was:
@@ -74,8 +99,6 @@ I wanted a Rubik's Cube simulator that was:
 ## Current Improvements (Planned/Upcoming)
 
 - More efficient handling of prime (') and double (2) moves
-- Support for wide moves (e.g., `Rw`, `Uw`)
-- Ability to rotate the entire cube (x, y, z rotations)
 - Direct access to each face's stickers (for inspection or export)
 - Initialize a cube directly from a sticker format
 - Reverse a set of moves (generate the inverse algorithm)

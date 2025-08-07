@@ -1,0 +1,319 @@
+import unittest
+import sys
+import os
+import numpy as np
+
+# Add the parent directory to the Python path so we can import cuber and cubie
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from cuber import Cube
+from cubie import Cubie
+
+
+class TestCubie(unittest.TestCase):
+    """Test cases for the Cubie class."""
+    
+    def setUp(self):
+        """Set up test fixtures before each test method."""
+        self.corner_cubie = Cubie({"R": "R", "U": "W", "F": "G"})
+        self.edge_cubie = Cubie({"R": "R", "F": "G"})
+        self.center_cubie = Cubie({"R": "R"})
+    
+    def test_cubie_initialization(self):
+        """Test that cubies are initialized correctly."""
+        self.assertEqual(self.corner_cubie.orientation, {"R": "R", "U": "W", "F": "G"})
+        self.assertEqual(self.edge_cubie.orientation, {"R": "R", "F": "G"})
+        self.assertEqual(self.center_cubie.orientation, {"R": "R"})
+    
+    def test_invalid_cubie_initialization(self):
+        """Test that invalid cubie orientations raise ValueError."""
+        # Test opposite faces on same piece
+        with self.assertRaises(ValueError):
+            Cubie({"R": "R", "L": "O"})
+        
+        # Test opposite colors on same piece
+        with self.assertRaises(ValueError):
+            Cubie({"R": "R", "U": "O"})
+        
+        # Test duplicate colors
+        with self.assertRaises(ValueError):
+            Cubie({"R": "R", "U": "R"})
+    
+    def test_cubie_turn_basic_moves(self):
+        """Test basic face turns on cubies."""
+        # Test R turn on corner cubie
+        # R turn mapping: {"D": "F", "F": "U", "U": "B", "B": "D"}
+        corner = Cubie({"R": "R", "U": "W", "B": "B"})
+        corner.turn("R")
+        expected = {"R": "R", "B": "W", "D": "B"}  # U->B, B->D after R turn
+        self.assertEqual(corner.orientation, expected)
+    
+    def test_cubie_turn_prime_moves(self):
+        """Test prime (counter-clockwise) turns on cubies."""
+        # R' turn mapping (reverse of R): {"F": "D", "U": "F", "B": "U", "D": "B"}
+        corner = Cubie({"R": "R", "U": "W", "B": "B"})
+        corner.turn("R'")
+        expected = {"R": "R", "F": "W", "U": "B"}  # U->F, B->U after R' turn
+        self.assertEqual(corner.orientation, expected)
+    
+    def test_cubie_turn_double_moves(self):
+        """Test double (180 degree) turns on cubies."""
+        corner = Cubie({"R": "R", "U": "W", "F": "G"})
+        corner.turn("R2")
+        expected = {"R": "R", "D": "W", "B": "G"}  # U->D, F->B after R2 turn
+        self.assertEqual(corner.orientation, expected)
+    
+    def test_invalid_move(self):
+        """Test that invalid moves raise ValueError."""
+        with self.assertRaises(ValueError):
+            self.corner_cubie.turn("Q")  # Invalid move
+        
+        with self.assertRaises(ValueError):
+            self.corner_cubie.turn("INVALID")  # Invalid move
+
+
+class TestCube(unittest.TestCase):
+    """Test cases for the Cube class."""
+    
+    def setUp(self):
+        """Set up test fixtures before each test method."""
+        self.cube = Cube()
+    
+    def test_cube_initialization(self):
+        """Test that the cube is initialized in a solved state."""
+        # Check that center cubie is None
+        self.assertIsNone(self.cube.grid[1, 1, 1])
+        
+        # Check that corners, edges, and centers are properly initialized
+        # Check a corner cubie
+        corner = self.cube.grid[0, 0, 0]
+        self.assertIsInstance(corner, Cubie)
+        expected_faces = {"L", "D", "B"}
+        self.assertEqual(set(corner.orientation.keys()), expected_faces)
+        
+        # Check an edge cubie
+        edge = self.cube.grid[1, 0, 0]
+        self.assertIsInstance(edge, Cubie)
+        expected_faces = {"D", "B"}
+        self.assertEqual(set(edge.orientation.keys()), expected_faces)
+        
+        # Check a face center
+        center = self.cube.grid[2, 1, 1]
+        self.assertIsInstance(center, Cubie)
+        expected_faces = {"R"}
+        self.assertEqual(set(center.orientation.keys()), expected_faces)
+    
+    def test_basic_moves(self):
+        """Test basic face moves."""
+        # Test that moves don't crash
+        self.cube.turn("R")
+        self.cube.turn("U")
+        self.cube.turn("F")
+        self.cube.turn("L")
+        self.cube.turn("D")
+        self.cube.turn("B")
+    
+    def test_prime_moves(self):
+        """Test prime (counter-clockwise) moves."""
+        self.cube.turn("R'")
+        self.cube.turn("U'")
+        self.cube.turn("F'")
+        self.cube.turn("L'")
+        self.cube.turn("D'")
+        self.cube.turn("B'")
+    
+    def test_double_moves(self):
+        """Test double (180 degree) moves."""
+        self.cube.turn("R2")
+        self.cube.turn("U2")
+        self.cube.turn("F2")
+        self.cube.turn("L2")
+        self.cube.turn("D2")
+        self.cube.turn("B2")
+    
+    def test_slice_moves(self):
+        """Test slice moves (M, E, S)."""
+        self.cube.turn("M")
+        self.cube.turn("E")
+        self.cube.turn("S")
+        self.cube.turn("M'")
+        self.cube.turn("E'")
+        self.cube.turn("S'")
+        self.cube.turn("M2")
+        self.cube.turn("E2")
+        self.cube.turn("S2")
+    
+    def test_wide_moves(self):
+        """Test wide moves (r, l, u, d, f, b)."""
+        self.cube.turn("r")
+        self.cube.turn("l")
+        self.cube.turn("u")
+        self.cube.turn("d")
+        self.cube.turn("f")
+        self.cube.turn("b")
+        self.cube.turn("r'")
+        self.cube.turn("l'")
+        self.cube.turn("u'")
+        self.cube.turn("d'")
+        self.cube.turn("f'")
+        self.cube.turn("b'")
+    
+    def test_cube_rotations(self):
+        """Test cube rotations (x, y, z)."""
+        self.cube.turn("x")
+        self.cube.turn("y")
+        self.cube.turn("z")
+        self.cube.turn("x'")
+        self.cube.turn("y'")
+        self.cube.turn("z'")
+        self.cube.turn("x2")
+        self.cube.turn("y2")
+        self.cube.turn("z2")
+    
+    def test_move_sequence(self):
+        """Test a sequence of moves."""
+        moves = "R U R' U' R U R' U'"
+        self.cube.turn(moves)
+        # Should not crash
+    
+    def test_move_cancellation(self):
+        """Test that a move followed by its inverse returns to original state."""
+        # Save initial state
+        initial_state = self._get_cube_state()
+        
+        # Apply R then R'
+        self.cube.turn("R")
+        self.cube.turn("R'")
+        
+        # Should be back to initial state
+        final_state = self._get_cube_state()
+        self._assert_states_equal(initial_state, final_state)
+    
+    def test_double_move_equivalence(self):
+        """Test that a double move is equivalent to doing the move twice."""
+        # Save initial state
+        initial_state = self._get_cube_state()
+        
+        # Apply R2
+        cube1 = Cube()
+        cube1.turn("R2")
+        state1 = self._get_cube_state_from_cube(cube1)
+        
+        # Apply R R
+        cube2 = Cube()
+        cube2.turn("R R")
+        state2 = self._get_cube_state_from_cube(cube2)
+        
+        # Should be the same
+        self._assert_states_equal(state1, state2)
+    
+    def test_four_quarter_turns_identity(self):
+        """Test that four quarter turns return to original state."""
+        initial_state = self._get_cube_state()
+        
+        # Apply R four times
+        self.cube.turn("R R R R")
+        
+        final_state = self._get_cube_state()
+        self._assert_states_equal(initial_state, final_state)
+    
+    def test_invalid_move(self):
+        """Test that invalid moves raise ValueError."""
+        with self.assertRaises(ValueError):
+            self.cube.turn("X")  # Should be lowercase x
+        
+        with self.assertRaises(ValueError):
+            self.cube.turn("Q")  # Invalid move
+    
+    def test_empty_move_string(self):
+        """Test that empty move strings are handled gracefully."""
+        initial_state = self._get_cube_state()
+        self.cube.turn("")
+        final_state = self._get_cube_state()
+        self._assert_states_equal(initial_state, final_state)
+    
+    def test_multiple_spaces_in_moves(self):
+        """Test that multiple spaces in move strings are handled correctly."""
+        self.cube.turn("R  U   R'    U'")  # Should not crash
+    
+    def _get_cube_state(self):
+        """Helper method to get the current state of self.cube."""
+        return self._get_cube_state_from_cube(self.cube)
+    
+    def _get_cube_state_from_cube(self, cube):
+        """Helper method to get the state of a given cube."""
+        state = {}
+        for x, y, z in np.ndindex(3, 3, 3):
+            if cube.grid[x, y, z] is not None:
+                state[(x, y, z)] = cube.grid[x, y, z].orientation.copy()
+        return state
+    
+    def _assert_states_equal(self, state1, state2):
+        """Helper method to assert that two cube states are equal."""
+        self.assertEqual(set(state1.keys()), set(state2.keys()))
+        for pos in state1:
+            self.assertEqual(state1[pos], state2[pos], 
+                           f"States differ at position {pos}")
+
+
+class TestCubeIntegration(unittest.TestCase):
+    """Integration tests for cube operations."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.cube = Cube()
+    
+    def test_sexy_move_pattern(self):
+        """Test the famous 'sexy move' pattern R U R' U'."""
+        # Apply sexy move 6 times should return to original state
+        initial_state = self._get_cube_state()
+        
+        for _ in range(6):
+            self.cube.turn("R U R' U'")
+        
+        final_state = self._get_cube_state()
+        self._assert_states_equal(initial_state, final_state)
+    
+    def test_wide_move_basic_functionality(self):
+        """Test that wide moves work without crashing."""
+        # Test that wide moves don't crash and affect the expected slices
+        initial_state = self._get_cube_state()
+        
+        self.cube.turn("r")
+        wide_r_state = self._get_cube_state()
+        
+        # Wide r should affect at least the right face and middle slice
+        # We just test that the state changed (not specific position requirements)
+        self.assertNotEqual(initial_state, wide_r_state)
+    
+    def test_scramble_and_solve_attempt(self):
+        """Test applying a scramble sequence."""
+        scramble = "R U R' U' F' U F U R U2 R' U2 R U' R'"
+        self.cube.turn(scramble)
+        # Should not crash and cube should be in some scrambled state
+        # We can't easily test if it's "correctly scrambled" without 
+        # implementing a full solve checker
+    
+    def _get_cube_state(self):
+        """Helper method to get the current state of self.cube."""
+        return self._get_cube_state_from_cube(self.cube)
+    
+    def _get_cube_state_from_cube(self, cube):
+        """Helper method to get the state of a given cube."""
+        state = {}
+        for x, y, z in np.ndindex(3, 3, 3):
+            if cube.grid[x, y, z] is not None:
+                state[(x, y, z)] = cube.grid[x, y, z].orientation.copy()
+        return state
+    
+    def _assert_states_equal(self, state1, state2):
+        """Helper method to assert that two cube states are equal."""
+        self.assertEqual(set(state1.keys()), set(state2.keys()))
+        for pos in state1:
+            self.assertEqual(state1[pos], state2[pos], 
+                           f"States differ at position {pos}")
+
+
+if __name__ == "__main__":
+    # Run all tests
+    unittest.main(verbosity=2)

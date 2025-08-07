@@ -17,6 +17,9 @@ class Cubie:
         "M": {"U": "F", "F": "D", "D": "B", "B": "U"},
         "E": {"B": "L", "L": "F", "F": "R", "R": "B"},
         "S": {"U": "R", "R": "D", "D": "L", "L": "U"},
+        "X": {"D": "F", "F": "U", "U": "B", "B": "D"},
+        "Y": {"F": "L", "L": "B", "B": "R", "R": "F"},
+        "Z": {"U": "R", "R": "D", "D": "L", "L": "U"},
     }
 
     TRANSFORM_MAPS = {}
@@ -77,7 +80,7 @@ class Cubie:
         Raises:
             ValueError: If the move is invalid.
         """
-        transform_map = self.TRANSFORM_MAPS.get(move)
+        transform_map = self.TRANSFORM_MAPS.get(move.upper())
         if transform_map:
             self._apply_transform(transform_map)
         else:
