@@ -174,21 +174,6 @@ class Cube:
 
 if __name__ == "__main__":
     my_cube = Cube()
-
-    print("--- Solved State ---")
-    my_cube.show()
-
-    moves_to_test = ["U", "D", "L", "R", "F", "B"]
-    
-    for move in moves_to_test:
-        my_cube = Cube()
-        print(f"--- Performing '{move}' Turn ---")
-        my_cube.turn(move)
-        my_cube.show()
-        
-        my_cube.turn(f"{move}'")
-        print(f"--- After {move}' (should be solved) ---")
-        my_cube.show()
     
     print("--- Performing \"U L2 D' L2 F R U D' F' L' B2 R D2 B2 R2 U2 F2 R' F2 R2 F2\" ---")
     my_cube.turn("U L2 D' L2 F R U D' F' L' B2 R D2 B2 R2 U2 F2 R' F2 R2 F2")
