@@ -158,6 +158,210 @@ class TestCube(unittest.TestCase):
         self.cube.turn("f'")
         self.cube.turn("b'")
     
+    def test_get_face_map_solved_cube(self):
+        """Test _get_face_map method on a solved cube."""
+        # Test all faces on a solved cube
+        expected_colors = {
+            'U': 'W',  # Up face should be all white
+            'D': 'Y',  # Down face should be all yellow
+            'L': 'O',  # Left face should be all orange
+            'R': 'R',  # Right face should be all red
+            'F': 'G',  # Front face should be all green
+            'B': 'B'   # Back face should be all blue
+        }
+        
+        for face, expected_color in expected_colors.items():
+            face_map = self.cube._get_face_map(face)
+            
+            # Check that it's a 3x3 array
+            self.assertEqual(face_map.shape, (3, 3))
+            
+            # Check that all squares are the expected color
+            for i in range(3):
+                for j in range(3):
+                    self.assertEqual(face_map[i, j], expected_color,
+                                   f"Face {face} at position ({i},{j}) should be {expected_color}")
+    
+    def test_get_face_map_after_moves(self):
+        """Test _get_face_map method after performing moves."""
+        # Apply a simple R move and check that faces change appropriately
+        initial_up = self.cube._get_face_map('U').copy()
+        initial_right = self.cube._get_face_map('R').copy()
+        
+        self.cube.turn("R")
+        
+        after_up = self.cube._get_face_map('U')
+        after_right = self.cube._get_face_map('R')
+        
+        # Right face should have rotated (not all squares same color anymore)
+        # We can't predict exact colors due to complexity, but we can check structure
+        self.assertEqual(after_right.shape, (3, 3))
+        self.assertEqual(after_up.shape, (3, 3))
+        
+        # Apply R' to return to original state
+        self.cube.turn("R'")
+        restored_up = self.cube._get_face_map('U')
+        restored_right = self.cube._get_face_map('R')
+        
+        # Should be back to original state
+        np.testing.assert_array_equal(initial_up, restored_up)
+        np.testing.assert_array_equal(initial_right, restored_right)
+    
+    def test_get_face_map_invalid_face(self):
+        """Test _get_face_map method with invalid face character."""
+        with self.assertRaises(KeyError):
+            self.cube._get_face_map('X')  # Invalid face
+        
+        with self.assertRaises(KeyError):
+            self.cube._get_face_map('Z')  # Invalid face
+    
+    def test_get_face_method(self):
+        """Test the public get_face method."""
+        # Test single face
+        face_dict = self.cube.get_face('U')
+        self.assertIn('U', face_dict)
+        self.assertEqual(len(face_dict['U']), 3)  # 3 rows
+        self.assertEqual(len(face_dict['U'][0]), 3)  # 3 columns
+        
+        # All squares should be 'W' on solved cube's up face
+        for row in face_dict['U']:
+            for square in row:
+                self.assertEqual(square, 'W')
+        
+        # Test multiple faces
+        multiple_faces = self.cube.get_face('UDL')
+        self.assertEqual(len(multiple_faces), 3)
+        self.assertIn('U', multiple_faces)
+        self.assertIn('D', multiple_faces)
+        self.assertIn('L', multiple_faces)
+        
+        # Check expected colors
+        for row in multiple_faces['U']:
+            for square in row:
+                self.assertEqual(square, 'W')
+        for row in multiple_faces['D']:
+            for square in row:
+                self.assertEqual(square, 'Y')
+        for row in multiple_faces['L']:
+            for square in row:
+                self.assertEqual(square, 'O')
+    
+    def test_get_face_all_faces(self):
+        """Test get_face method with all faces."""
+        all_faces = self.cube.get_face('UDLRFB')
+        self.assertEqual(len(all_faces), 6)
+        
+        expected_colors = {'U': 'W', 'D': 'Y', 'L': 'O', 'R': 'R', 'F': 'G', 'B': 'B'}
+        
+        for face, expected_color in expected_colors.items():
+            self.assertIn(face, all_faces)
+            for row in all_faces[face]:
+                for square in row:
+                    self.assertEqual(square, expected_color)
+    
+    def test_reset_method(self):
+        """Test the reset method returns cube to solved state."""
+        # Verify cube starts solved
+        initial_state = self._get_cube_state()
+        
+        # Scramble the cube
+        scramble = "R U R' U' F' U F U R U2 R' U2 R U' R'"
+        self.cube.turn(scramble)
+        
+        # Verify cube is scrambled (not in solved state)
+        scrambled_state = self._get_cube_state()
+        self.assertNotEqual(initial_state, scrambled_state)
+        
+        # Reset the cube
+        self.cube.reset()
+        
+        # Verify cube is back to solved state
+        reset_state = self._get_cube_state()
+        self._assert_states_equal(initial_state, reset_state)
+    
+    def test_reset_all_faces_solved(self):
+        """Test that reset method results in all faces showing correct colors."""
+        # Scramble the cube first
+        self.cube.turn("R U R' U' F R F' U R U' R'")
+        
+        # Reset the cube
+        self.cube.reset()
+        
+        # Check all faces are correctly colored
+        expected_colors = {
+            'U': 'W',  # Up face should be all white
+            'D': 'Y',  # Down face should be all yellow
+            'L': 'O',  # Left face should be all orange
+            'R': 'R',  # Right face should be all red
+            'F': 'G',  # Front face should be all green
+            'B': 'B'   # Back face should be all blue
+        }
+        
+        for face, expected_color in expected_colors.items():
+            face_map = self.cube._get_face_map(face)
+            for i in range(3):
+                for j in range(3):
+                    self.assertEqual(face_map[i, j], expected_color,
+                                   f"After reset, face {face} at position ({i},{j}) should be {expected_color}")
+    
+    def test_reset_multiple_times(self):
+        """Test that reset works consistently when called multiple times."""
+        # Get initial solved state
+        initial_state = self._get_cube_state()
+        
+        # Reset should not change a solved cube
+        self.cube.reset()
+        after_first_reset = self._get_cube_state()
+        self._assert_states_equal(initial_state, after_first_reset)
+        
+        # Scramble and reset multiple times
+        for i in range(3):
+            # Scramble with different moves each time
+            scrambles = ["R U R'", "F D F'", "L' U L U2"]
+            self.cube.turn(scrambles[i])
+            
+            # Reset should always return to solved state
+            self.cube.reset()
+            reset_state = self._get_cube_state()
+            self._assert_states_equal(initial_state, reset_state)
+    
+    def test_reset_preserves_cube_structure(self):
+        """Test that reset preserves the cube's 3D grid structure."""
+        # Scramble the cube
+        self.cube.turn("R U R' U' F R F'")
+        
+        # Reset the cube
+        self.cube.reset()
+        
+        # Verify grid structure is maintained
+        self.assertEqual(self.cube.grid.shape, (3, 3, 3))
+        
+        # Verify center is still None
+        self.assertIsNone(self.cube.grid[1, 1, 1])
+        
+        # Verify all other positions have Cubie objects
+        for x, y, z in np.ndindex(3, 3, 3):
+            if x == 1 and y == 1 and z == 1:
+                continue
+            self.assertIsInstance(self.cube.grid[x, y, z], Cubie)
+            self.assertIsNotNone(self.cube.grid[x, y, z].orientation)
+    
+    def test_reset_vs_new_cube(self):
+        """Test that reset produces the same state as creating a new cube."""
+        # Scramble the current cube
+        self.cube.turn("R U2 R' D R U' R' D' R U' R'")
+        
+        # Reset the cube
+        self.cube.reset()
+        reset_state = self._get_cube_state()
+        
+        # Create a new cube
+        new_cube = Cube()
+        new_state = self._get_cube_state_from_cube(new_cube)
+        
+        # Both should be identical
+        self._assert_states_equal(reset_state, new_state)
+    
     def test_cube_rotations(self):
         """Test cube rotations (x, y, z)."""
         self.cube.turn("x")

@@ -9,6 +9,14 @@ class Cube:
     - y-axis: 0=Down (Y), 1=Middle, 2=Up (W)
     - z-axis: 0=Back (B), 1=Middle, 2=Front (G)
     """
+
+    # Face view configurations for 2D unfolded representation
+    FACE_VIEWS = {
+        'U': (1, 2, False, False),   'D': (1, 0, True, False),
+        'L': (0, 0, True, False),   'R': (0, 2, True, True),
+        'F': (2, 2, True, False),   'B': (2, 0, True, True)
+    }
+    
     def __init__(self):
         """
         Initializes a 3x3x3 grid of Cubie objects. The initial state of the cube will be solved.
@@ -33,52 +41,166 @@ class Cube:
             if z == 0: orientation["B"] = "B"
             
             self.grid[x, y, z] = Cubie(orientation)
+    
+    def __str__(self):
+        """
+        Returns a string representation of the cube in 2D unfolded format.
+        
+        This creates the same visual representation as show() but returns it as
+        a string instead of printing it directly.
+        
+        Returns:
+            str: A multi-line string showing the unfolded cube representation.
+        """
+        U, L, F, R, B, D = (self._get_face_map(f) for f in "ULFRBD")
+
+        pad = " " * 8
+        lines = []
+        
+        # Top face (U)
+        lines.append("")
+        for row in U:
+            lines.append(pad + " ".join(row))
+        
+        # Separator
+        lines.append("-" * 30)
+        
+        # Middle row (L, F, R, B)
+        for rL, rF, rR, rB in zip(L, F, R, B):
+            lines.append(" ".join(rL) + " | " + " ".join(rF) + " | " + " ".join(rR) + " | " + " ".join(rB))
+        
+        # Separator
+        lines.append("-" * 30)
+        
+        # Bottom face (D)
+        for row in D:
+            lines.append(pad + " ".join(row))
+        lines.append("")
+        
+        return "\n".join(lines)
+
+    def reset(self):
+        """
+        Resets the cube to the solved state.
+        
+        This method restores the cube to its initial solved state by recreating
+        all cubie objects with their correct initial orientations and positions.
+        This is equivalent to creating a new Cube() object, but faster since it
+        reuses the existing grid structure.
+        
+        The solved state has:
+        - Up face (U): All white (W)
+        - Down face (D): All yellow (Y)
+        - Left face (L): All orange (O)
+        - Right face (R): All red (R)
+        - Front face (F): All green (G)
+        - Back face (B): All blue (B)
+        
+        After calling this method, the cube will be in the same state as when
+        it was first initialized.
+        
+        Examples:
+            >>> cube = Cube()
+            >>> cube.turn("R U R' U'")  # Scramble the cube
+            >>> cube.reset()  # Return to solved state
+            >>> # Cube is now solved again
+        """
+        # Recreate all cubies with their solved orientations
+        for x, y, z in np.ndindex(3, 3, 3):
+            if x == 1 and y == 1 and z == 1:
+                self.grid[x, y, z] = None
+                continue
+            
+            orientation = {}
+            if x == 2: orientation["R"] = "R"
+            if x == 0: orientation["L"] = "O"
+            if y == 2: orientation["U"] = "W"
+            if y == 0: orientation["D"] = "Y"
+            if z == 2: orientation["F"] = "G"
+            if z == 0: orientation["B"] = "B"
+            
+            self.grid[x, y, z] = Cubie(orientation)
+
+    def get_face(self, face_chars: str) -> dict[str, list[list[str]]]:
+        """
+        Returns a 2D array of the colors on the specified face of the cube.
+
+        Args:
+            face_char (str): The face to extract ('U', 'D', 'L', 'R', 'F', 'B').
+            
+        Returns:
+            dict[str, list[list[str]]]: A dictionary of 2D lists of strings representing the colors on each face.
+        """
+        return {face_char: self._get_face_map(face_char).tolist() for face_char in face_chars}
+
+    def _get_face_map(self, face_char: str):
+        """
+        Extracts and formats a 2D representation of a specific face of the cube.
+        
+        This method creates a 3x3 grid showing the colors visible on the specified
+        face when looking at the cube from the standard viewing angle. The returned
+        array represents the face as you would see it when looking directly at it.
+        
+        The orientation follows standard Rubik's cube notation:
+        - U (Up): Top face as viewed from above
+        - D (Down): Bottom face as viewed from below  
+        - L (Left): Left face as viewed from the left
+        - R (Right): Right face as viewed from the right
+        - F (Front): Front face as viewed from the front
+        - B (Back): Back face as viewed from the back
+        
+        Examples:
+            >>> cube = Cube()  # Solved cube
+            >>> up_face = cube._get_face_map('U')
+            >>> print(up_face)
+            [['W' 'W' 'W']
+             ['W' 'W' 'W'] 
+             ['W' 'W' 'W']]
+            
+            >>> cube.turn("R")
+            >>> right_face = cube._get_face_map('R')
+            # Right face will show mixed colors after the turn
+        
+        Args:
+            face_char (str): The face to extract. Must be one of 'U', 'D', 'L', 'R', 'F', 'B'.
+            
+        Returns:
+            np.ndarray: A 3x3 array of strings representing the colors on that face.
+                       Each element is a single character representing the color.
+                       
+        Raises:
+            KeyError: If face_char is not a valid face identifier.
+        """
+        axis, idx, flip_rows, flip_cols = Cube.FACE_VIEWS[face_char]
+        
+        # Select the correct 2D slice from the 3D grid
+        if axis == 0: face_slice = self.grid[idx, :, :]   # L/R faces are (y, z) slices
+        elif axis == 1: face_slice = self.grid[:, idx, :] # U/D faces are (x, z) slices
+        else: face_slice = self.grid[:, :, idx]           # F/B faces are (x, y) slices
+
+        face_map = np.empty((3, 3), dtype=str)
+        
+        if face_char in 'UD':
+            for (x, z), cubie in np.ndenumerate(face_slice):
+                if cubie: face_map[z, x] = cubie.orientation.get(face_char, ' ')
+        else:
+            if face_char in 'LR':
+                for (y, z), cubie in np.ndenumerate(face_slice):
+                    if cubie: face_map[y, z] = cubie.orientation.get(face_char, ' ')
+            else:
+                for (x, y), cubie in np.ndenumerate(face_slice):
+                    if cubie: face_map[y, x] = cubie.orientation.get(face_char, ' ')
+        
+        if flip_rows: face_map = np.flip(face_map, axis=0)
+        if flip_cols: face_map = np.flip(face_map, axis=1)
+        return face_map
 
     def show(self):
         """
         Prints a consistent and correctly oriented 2D unfolded representation of the cube.
         The representation will be the standard 2D unfolded representation of the cube.
         """
-        FACE_VIEWS = {
-            'U': (1, 2, False, False),   'D': (1, 0, True, False),
-            'L': (0, 0, True, False),   'R': (0, 2, True, True),
-            'F': (2, 2, True, False),   'B': (2, 0, True, True)
-        }
-
-        def get_face_map(face_char):
-            axis, idx, flip_rows, flip_cols = FACE_VIEWS[face_char]
-            
-            # Select the correct 2D slice from the 3D grid
-            if axis == 0: face_slice = self.grid[idx, :, :]   # L/R faces are (y, z) slices
-            elif axis == 1: face_slice = self.grid[:, idx, :] # U/D faces are (x, z) slices
-            else: face_slice = self.grid[:, :, idx]           # F/B faces are (x, y) slices
-
-            face_map = np.empty((3, 3), dtype=str)
-            
-            if face_char in 'UD':
-                for (x, z), cubie in np.ndenumerate(face_slice):
-                    if cubie: face_map[z, x] = cubie.orientation.get(face_char, ' ')
-            else:
-                if face_char in 'LR':
-                    for (y, z), cubie in np.ndenumerate(face_slice):
-                        if cubie: face_map[y, z] = cubie.orientation.get(face_char, ' ')
-                else:
-                    for (x, y), cubie in np.ndenumerate(face_slice):
-                        if cubie: face_map[y, x] = cubie.orientation.get(face_char, ' ')
-            
-            if flip_rows: face_map = np.flip(face_map, axis=0)
-            if flip_cols: face_map = np.flip(face_map, axis=1)
-            return face_map
-
-        U, L, F, R, B, D = (get_face_map(f) for f in "ULFRBD")
-
-        pad = " " * 8
-        print("\n" + pad + f"\n{pad}".join(" ".join(row) for row in U))
-        print("-" * 30)
-        for rL, rF, rR, rB in zip(L, F, R, B):
-            print(" ".join(rL), "|", " ".join(rF), "|", " ".join(rR), "|", " ".join(rB))
-        print("-" * 30)
-        print(pad + f"\n{pad}".join(" ".join(row) for row in D) + "\n")
+        print(str(self))
 
     def turn(self, moves: str):
         """

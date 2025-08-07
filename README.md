@@ -94,11 +94,11 @@ I wanted a Rubik's Cube simulator that was:
 
 - **Reliable:** No mysterious bugs or unexpected behavior.
 - **Understandable:** Easy to read and modify.
-- **Educational:** Good for learning about cube mechanics and programming.
+- **Efficient:** Readily scalable for data generation.
+- **Educational:** Good for learning about cube mechanics and building libraries.
 
 ## Current Improvements (Planned/Upcoming)
 
-- More efficient handling of prime (') and double (2) moves
 - Direct access to each face's stickers (for inspection or export)
 - Initialize a cube directly from a sticker format
 - Reverse a set of moves (generate the inverse algorithm)

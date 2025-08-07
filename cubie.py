@@ -98,7 +98,7 @@ class Cubie:
         Raises:
             ValueError: If the move is invalid or not recognized.
         """
-        transform_map = self.TRANSFORM_MAPS.get(move.upper())
+        transform_map = Cubie.TRANSFORM_MAPS.get(move.upper())
         if transform_map:
             self._apply_transform(transform_map)
         else:
