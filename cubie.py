@@ -1,4 +1,8 @@
 class Cubie:
+    """
+    A class representing a single cubie on a Rubik's Cube.
+    A cubie is a single piece of the cube, and can be either an edge, a corner, or a middle piece.
+    """
     FACES = {"U", "D", "F", "B", "L", "R"}
     COLORS = {"W", "Y", "G", "B", "R", "O"}
     OPPOSITE_PAIRS = [("U", "D"), ("F", "B"), ("L", "R"), ("W", "Y"), ("G", "B"), ("R", "O")]
@@ -27,12 +31,27 @@ class Cubie:
     def __init__(self, orientation: dict[str, str]):
         """
         Initialize a cubie with a dictionary of orientations.
+        The orientation dictionary is a dictionary of the current faces of the cubie and the colors of the faces.
+        The keys are the faces of the cubie, and the values are the colors of the faces.
+
+        Args:
+            orientation (dict[str, str]): The orientation of the cubie. The keys are the faces of the cubie, and the values are the colors of the faces.
         """
         self._validate_orientation(orientation)
         self.orientation = orientation
     
     def _validate_orientation(self, orientation: dict[str, str]):
-        """Check if the orientation dictionary is valid."""
+        """
+        Check if the orientation dictionary is valid.
+        The orientation dictionary is a dictionary of the current faces of the cubie and the colors of the faces.
+        The keys are the faces of the cubie, and the values are the colors of the faces.
+
+        Args:
+            orientation (dict[str, str]): The orientation of the cubie.
+
+        Raises:
+            ValueError: If the orientation dictionary is invalid.
+        """
         faces = set(orientation.keys())
         colors = set(orientation.values())
 
@@ -51,6 +70,12 @@ class Cubie:
     def turn(self, move: str):
         """
         Updates the orientation dictionary based on the move.
+
+        Args:
+            move (str): The move to perform.
+
+        Raises:
+            ValueError: If the move is invalid.
         """
         transform_map = self.TRANSFORM_MAPS.get(move)
         if transform_map:
@@ -61,6 +86,9 @@ class Cubie:
     def _apply_transform(self, transform_map: dict[str, str]):
         """
         Safely applies a transformation to the cubie's orientation.
+
+        Args:
+            transform_map (dict[str, str]): The transformation to apply.
         """
         new_orientation = {}
         for old_face, color in self.orientation.items():

@@ -10,6 +10,13 @@ class Cube:
     - z-axis: 0=Back (B), 1=Middle, 2=Front (G)
     """
     def __init__(self):
+        """
+        Initializes a 3x3x3 grid of Cubie objects. The initial state of the cube will be solved.
+        The coordinate system is (x, y, z) where:
+        - x-axis: 0=Left (O), 1=Middle, 2=Right (R)
+        - y-axis: 0=Down (Y), 1=Middle, 2=Up (W)
+        - z-axis: 0=Back (B), 1=Middle, 2=Front (G)
+        """
         self.grid = np.empty((3, 3, 3), dtype=object)
 
         for x, y, z in np.ndindex(3, 3, 3):
@@ -28,7 +35,10 @@ class Cube:
             self.grid[x, y, z] = Cubie(orientation)
 
     def show(self):
-        """Prints a consistent and correctly oriented 2D unfolded representation of the cube."""
+        """
+        Prints a consistent and correctly oriented 2D unfolded representation of the cube.
+        The representation will be the standard 2D unfolded representation of the cube.
+        """
         FACE_VIEWS = {
             'U': (1, 2, False, False),   'D': (1, 0, True, False),
             'L': (0, 0, True, False),   'R': (0, 2, True, True),
@@ -71,7 +81,37 @@ class Cube:
         print(pad + f"\n{pad}".join(" ".join(row) for row in D) + "\n")
 
     def turn(self, moves: str):
-        """Performs a turn on the cube based on your definition."""
+        """
+        Performs a turn on the cube based on your definition.
+        The syntax is the standard Rubik's Cube notation.
+        
+        The moves are defined as follows:
+        - U: Up
+        - D: Down
+        - L: Left
+        - R: Right
+        - F: Front
+        - B: Back
+        - M: Middle
+        - E: Edge
+        - S: Corner
+        - x: 90 degree clockwise turn around the x-axis (U)
+        - y: 90 degree clockwise turn around the y-axis (L)
+        - z: 90 degree clockwise turn around the z-axis (F)
+
+        The modifiers are defined as follows:
+        - ': 90 degree counter-clockwise turn
+        - 2: 180 degree turn
+        - : 90 degree clockwise turn
+
+        The moves are performed in the order they are given.
+
+        For example:
+        "U L2 D' L2 F R U D' F' L' B2 R D2 B2 R2 U2 F2 R' F2 R2 F2"
+
+        Args:
+            moves (str): The moves to perform on the cube.
+        """
         for move in moves.split():
             if len(move) == 0:
                 continue
@@ -92,7 +132,21 @@ class Cube:
                 self._turn_clockwise(move_char)
 
     def _turn_clockwise(self, move: str):
-        """Turns a face clockwise."""
+        """
+        Turns a face clockwise.
+        The availablemoves are:
+        - U: Up
+        - D: Down
+        - L: Left
+        - F: Front
+        - B: Back
+        - M: Middle
+        - E: Edge
+        - S: Corner
+
+        Args:
+            move (str): The move to perform.
+        """
         if move == "U":
             move_slice = self.grid[:, 2, :].copy()
             for x in range(3):
