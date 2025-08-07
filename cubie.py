@@ -72,13 +72,31 @@ class Cubie:
     
     def turn(self, move: str):
         """
-        Updates the orientation dictionary based on the move.
+        Updates the cubie's orientation based on a cube move.
+        
+        This method applies the transformation that would occur to this cubie
+        when the specified move is performed on the cube. The cubie's orientation
+        is updated to reflect how its faces would be repositioned.
+        
+        Supported moves include:
+        - Basic face moves: U, D, L, R, F, B (and their primes/doubles)
+        - Slice moves: M, E, S (and their primes/doubles)
+        - Cube rotations: X, Y, Z (and their primes/doubles)
+        
+        The move can include modifiers:
+        - ' (prime): Counter-clockwise (e.g., "U'", "R'", "X'")
+        - 2: Double turn (e.g., "U2", "R2", "X2")
+        
+        Examples:
+        - "R": Rotate this cubie as if the right face were turned clockwise
+        - "U'": Rotate this cubie as if the up face were turned counter-clockwise
+        - "M2": Rotate this cubie as if the middle slice were turned 180 degrees
 
         Args:
-            move (str): The move to perform.
+            move (str): The move to perform (e.g., "R", "U'", "M2", "X").
 
         Raises:
-            ValueError: If the move is invalid.
+            ValueError: If the move is invalid or not recognized.
         """
         transform_map = self.TRANSFORM_MAPS.get(move.upper())
         if transform_map:

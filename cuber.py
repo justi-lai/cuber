@@ -82,35 +82,49 @@ class Cube:
 
     def turn(self, moves: str):
         """
-        Performs a turn on the cube based on your definition.
-        The syntax is the standard Rubik's Cube notation.
+        Performs a sequence of turns on the cube using standard Rubik's Cube notation.
         
-        The moves are defined as follows:
-        - U: Up
-        - D: Down
-        - L: Left
-        - R: Right
-        - F: Front
-        - B: Back
-        - M: Middle
-        - E: Edge
-        - S: Corner
-        - x: 90 degree clockwise turn around the x-axis (U)
-        - y: 90 degree clockwise turn around the y-axis (L)
-        - z: 90 degree clockwise turn around the z-axis (F)
+        The moves are performed in the order they are given, separated by spaces.
+        
+        Basic Face Moves:
+        - U: Up face clockwise
+        - D: Down face clockwise
+        - L: Left face clockwise
+        - R: Right face clockwise
+        - F: Front face clockwise
+        - B: Back face clockwise
+        
+        Slice Moves:
+        - M: Middle slice (between L and R, follows L direction)
+        - E: Equatorial slice (between U and D, follows D direction)  
+        - S: Standing slice (between F and B, follows F direction)
+        
+        Wide Moves:
+        - r: Wide right (R + middle slice)
+        - l: Wide left (L + middle slice)
+        - u: Wide up (U + middle slice)
+        - d: Wide down (D + middle slice)
+        - f: Wide front (F + middle slice)
+        - b: Wide back (B + middle slice)
+        
+        Cube Rotations:
+        - x: Rotate entire cube around x-axis (like R)
+        - y: Rotate entire cube around y-axis (like U)
+        - z: Rotate entire cube around z-axis (like F)
 
-        The modifiers are defined as follows:
-        - ': 90 degree counter-clockwise turn
-        - 2: 180 degree turn
-        - : 90 degree clockwise turn
+        Modifiers:
+        - ' (prime): Counter-clockwise turn (e.g., U', R', x')
+        - 2: 180-degree turn (e.g., U2, R2, x2)
+        - (no modifier): Clockwise turn (e.g., U, R, x)
 
-        The moves are performed in the order they are given.
-
-        For example:
-        "U L2 D' L2 F R U D' F' L' B2 R D2 B2 R2 U2 F2 R' F2 R2 F2"
+        Examples:
+        - "R U R' U'": Basic sequence (sexy move)
+        - "U L2 D' L2 F R U D' F' L' B2 R D2 B2 R2 U2 F2 R' F2 R2 F2": Complex scramble
+        - "r U r' F R F'": Wide move sequence
+        - "x y z": Cube rotation sequence
 
         Args:
-            moves (str): The moves to perform on the cube.
+            moves (str): Space-separated string of moves to perform on the cube.
         """
         for move in moves.split():
             if len(move) == 0:
@@ -130,19 +144,38 @@ class Cube:
             
     def _turn_clockwise(self, move: str):
         """
-        Turns a face clockwise.
-        The availablemoves are:
-        - U: Up
-        - D: Down
-        - L: Left
-        - F: Front
-        - B: Back
-        - M: Middle
-        - E: Edge
-        - S: Corner
+        Turns a face or performs a cube rotation clockwise (90 degrees).
+        
+        The available moves are:
+        
+        Basic Face Moves:
+        - U: Up face
+        - D: Down face
+        - L: Left face
+        - R: Right face
+        - F: Front face
+        - B: Back face
+        
+        Slice Moves:
+        - M: Middle slice (between L and R, follows L direction)
+        - E: Equatorial slice (between U and D, follows D direction)
+        - S: Standing slice (between F and B, follows F direction)
+        
+        Wide Moves:
+        - r: Wide right (R + M)
+        - l: Wide left (L + middle slice)
+        - u: Wide up (U + middle slice)
+        - d: Wide down (D + middle slice)
+        - f: Wide front (F + middle slice)
+        - b: Wide back (B + middle slice)
+        
+        Cube Rotations:
+        - x: Rotate entire cube around x-axis (like R)
+        - y: Rotate entire cube around y-axis (like U)
+        - z: Rotate entire cube around z-axis (like F)
 
         Args:
-            move (str): The move to perform.
+            move (str): The move to perform (single character).
         """
         if move == "U":
             move_slice = self.grid[:, 2, :].copy()
@@ -333,7 +366,42 @@ class Cube:
 
     def _turn_counter_clockwise(self, move: str):
         """
-        Turns a face counter-clockwise.
+        Turns a face or performs a cube rotation counter-clockwise (90 degrees).
+        
+        This method performs the inverse of the corresponding clockwise move.
+        All moves supported by _turn_clockwise are also supported here in their
+        counter-clockwise (prime) form.
+        
+        The available moves are:
+        
+        Basic Face Moves:
+        - U: Up face counter-clockwise
+        - D: Down face counter-clockwise
+        - L: Left face counter-clockwise
+        - R: Right face counter-clockwise
+        - F: Front face counter-clockwise
+        - B: Back face counter-clockwise
+        
+        Slice Moves:
+        - M: Middle slice counter-clockwise
+        - E: Equatorial slice counter-clockwise
+        - S: Standing slice counter-clockwise
+        
+        Wide Moves:
+        - r: Wide right counter-clockwise
+        - l: Wide left counter-clockwise
+        - u: Wide up counter-clockwise
+        - d: Wide down counter-clockwise
+        - f: Wide front counter-clockwise
+        - b: Wide back counter-clockwise
+        
+        Cube Rotations:
+        - x: Rotate entire cube counter-clockwise around x-axis
+        - y: Rotate entire cube counter-clockwise around y-axis
+        - z: Rotate entire cube counter-clockwise around z-axis
+
+        Args:
+            move (str): The move to perform (may include ' modifier, which will be stripped).
         """
         move_char = move.rstrip("'")
         
@@ -525,7 +593,45 @@ class Cube:
 
     def _turn_double(self, move: str):
         """
-        Turns a face 180 degrees (double turn).
+        Turns a face or performs a cube rotation 180 degrees (double turn).
+        
+        This method performs a 180-degree rotation, which is equivalent to
+        performing the same clockwise move twice, but is implemented as a
+        single optimized transformation for better performance.
+        
+        The available moves are:
+        
+        Basic Face Moves:
+        - U: Up face 180 degrees
+        - D: Down face 180 degrees
+        - L: Left face 180 degrees
+        - R: Right face 180 degrees
+        - F: Front face 180 degrees
+        - B: Back face 180 degrees
+        
+        Slice Moves:
+        - M: Middle slice 180 degrees
+        - E: Equatorial slice 180 degrees
+        - S: Standing slice 180 degrees
+        
+        Wide Moves:
+        - r: Wide right 180 degrees
+        - l: Wide left 180 degrees
+        - u: Wide up 180 degrees
+        - d: Wide down 180 degrees
+        - f: Wide front 180 degrees
+        - b: Wide back 180 degrees
+        
+        Cube Rotations:
+        - x: Rotate entire cube 180 degrees around x-axis
+        - y: Rotate entire cube 180 degrees around y-axis
+        - z: Rotate entire cube 180 degrees around z-axis
+        
+        Note: A 180-degree turn is its own inverse (R2 followed by R2 returns
+        to the original state).
+
+        Args:
+            move (str): The move to perform (single character, without '2' modifier).
         """
         if move == "U":
             move_slice = self.grid[:, 2, :].copy()
