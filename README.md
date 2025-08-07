@@ -112,3 +112,7 @@ After these improvements, the main objective will be to:
 - Pre-train the model on generated data, then fine-tune it using top cuber solves
 - Develop a CFOP solver that imitates top solvers, aiming for ergonomic and efficient solutions
 - Provide example solves to help cubers train and learn from high-quality, human-like solutions
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
