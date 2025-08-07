@@ -22,8 +22,24 @@ from cuber import Cube
 cube = Cube()
 cube.show()  # Display the solved state
 
-cube.turn("U R2 F'")  # Perform moves
+cube.turn("U L2 D' L2 F R U D' F' L' B2 R D2 B2 R2 U2 F2 R' F2 R2 F2")  # Perform moves
 cube.show()           # See the result
+```
+
+Example output of `cube.show()`:
+
+```
+        Y B O
+        B W R
+        W Y B
+------------------------------
+B O G | R G W | R G G | W Y O
+O O B | R G W | R R B | W B W
+O G R | Y R O | G G R | B O W
+------------------------------
+        G Y Y
+        O Y W
+        B Y Y
 ```
 
 Or run the script directly to see example moves and their effects.
