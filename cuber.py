@@ -121,6 +121,51 @@ class Cube:
             
             self.grid[x, y, z] = Cubie(orientation)
 
+    def is_solved(self) -> bool:
+        """
+        Checks if the cube is in a solved state.
+        
+        A cube is considered solved if each face shows only one color,
+        regardless of the cube's orientation. This means the cube could
+        be rotated (e.g., with x, y, z moves) but still be considered solved
+        as long as each face is uniform.
+        
+        The method works by:
+        1. Getting the 3x3 color grid for each face
+        2. Checking that all 9 squares on each face are the same color
+        3. Ensuring all 6 faces pass this test
+        
+        Returns:
+            bool: True if the cube is solved (each face shows one color),
+                  False otherwise.
+                  
+        Examples:
+            >>> cube = Cube()  # New cube is solved
+            >>> cube.is_solved()
+            True
+            
+            >>> cube.turn("R U R' U'")  # Scramble
+            >>> cube.is_solved()
+            False
+            
+            >>> cube.reset()  # Back to solved
+            >>> cube.is_solved()
+            True
+            
+            >>> cube.turn("x y z")  # Rotate cube (still solved)
+            >>> cube.is_solved()
+            True
+        """
+        for face_char in 'UDLRFB':
+            face_map = self._get_face_map(face_char)
+            center_color = face_map[1, 1]
+            for i in range(3):
+                for j in range(3):
+                    if face_map[i, j] != center_color:
+                        return False
+        
+        return True
+
     def get_face(self, face_chars: str) -> dict[str, list[list[str]]]:
         """
         Returns a 2D array of the colors on the specified face of the cube.

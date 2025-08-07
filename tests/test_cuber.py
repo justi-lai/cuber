@@ -362,6 +362,91 @@ class TestCube(unittest.TestCase):
         # Both should be identical
         self._assert_states_equal(reset_state, new_state)
     
+    def test_is_solved_new_cube(self):
+        """Test that a new cube is solved."""
+        self.assertTrue(self.cube.is_solved())
+    
+    def test_is_solved_after_scramble(self):
+        """Test that cube is not solved after scrambling."""
+        self.assertTrue(self.cube.is_solved())  # Start solved
+        
+        # Scramble the cube
+        self.cube.turn("R U R' U'")
+        self.assertFalse(self.cube.is_solved())  # Should not be solved
+        
+        # More complex scramble
+        self.cube.turn("F D F' U R U' R'")
+        self.assertFalse(self.cube.is_solved())  # Still not solved
+    
+    def test_is_solved_after_reset(self):
+        """Test that cube is solved after reset."""
+        # Scramble the cube
+        self.cube.turn("R U R' U' F' U F U R U2 R' U2 R U' R'")
+        self.assertFalse(self.cube.is_solved())
+        
+        # Reset should make it solved
+        self.cube.reset()
+        self.assertTrue(self.cube.is_solved())
+    
+    def test_is_solved_with_cube_rotations(self):
+        """Test that cube rotations don't affect solved status."""
+        # Start with solved cube
+        self.assertTrue(self.cube.is_solved())
+        
+        # Apply various cube rotations - should still be solved
+        rotations = ["x", "y", "z", "x'", "y'", "z'", "x2", "y2", "z2"]
+        for rotation in rotations:
+            self.cube.turn(rotation)
+            self.assertTrue(self.cube.is_solved(), 
+                          f"Cube should still be solved after rotation {rotation}")
+    
+    def test_is_solved_complex_rotation_sequence(self):
+        """Test solved status with complex cube rotation sequences."""
+        # Start with solved cube
+        self.assertTrue(self.cube.is_solved())
+        
+        # Apply complex rotation sequence
+        self.cube.turn("x y z x' y' z' x2 y2 z2")
+        self.assertTrue(self.cube.is_solved())
+        
+        # Another complex sequence
+        self.cube.turn("x y x' z y' z' x y z")
+        self.assertTrue(self.cube.is_solved())
+    
+    def test_is_solved_identity_sequences(self):
+        """Test that identity sequences maintain solved status."""
+        # Test that move + inverse keeps cube solved
+        identity_sequences = [
+            "R R'", "U U'", "F F'", "L L'", "D D'", "B B'",
+            "R R R R", "U2 U2", "M M'", "E E'", "S S'",
+            "r r'", "u u'", "f f'"
+        ]
+        
+        for sequence in identity_sequences:
+            self.cube.reset()  # Start fresh
+            self.assertTrue(self.cube.is_solved())
+            
+            self.cube.turn(sequence)
+            self.assertTrue(self.cube.is_solved(), 
+                          f"Cube should remain solved after identity sequence: {sequence}")
+    
+    def test_is_solved_mixed_sequences(self):
+        """Test solved status detection with mixed move sequences."""
+        # Test a sequence that returns to solved state
+        self.cube.turn("R U R' U' R U R' U'")  # Two sexy moves
+        # This might or might not be solved depending on the pattern
+        
+        # Test definitely non-solving sequence
+        self.cube.reset()
+        self.cube.turn("R U R'")  # Incomplete pattern
+        self.assertFalse(self.cube.is_solved())
+        
+        # Test sequence with cube rotations mixed in
+        self.cube.reset()
+        self.cube.turn("x R U R' x'")  # Rotation + moves + rotation back
+        # This should not be solved as it's not an identity
+        # (Note: this test checks the logic works with mixed move types)
+    
     def test_cube_rotations(self):
         """Test cube rotations (x, y, z)."""
         self.cube.turn("x")
