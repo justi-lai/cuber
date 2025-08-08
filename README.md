@@ -99,7 +99,7 @@ I wanted a Rubik's Cube simulator that was:
 
 ## Current Improvements (Planned/Upcoming)
 
-- Initialize a cube directly from a sticker format
+- Look to make methods checking if certain structures are made (cross, blocks, F2L, etc.)
 
 ## Future Objectives
 
