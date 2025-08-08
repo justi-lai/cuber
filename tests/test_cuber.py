@@ -447,6 +447,134 @@ class TestCube(unittest.TestCase):
         # This should not be solved as it's not an identity
         # (Note: this test checks the logic works with mixed move types)
     
+    def test_reverse_formula_basic_moves(self):
+        """Test reverse_formula with basic face moves."""
+        test_cases = [
+            ("R", "R'"),
+            ("R'", "R"),
+            ("R2", "R2"),
+            ("U", "U'"),
+            ("U'", "U"),
+            ("U2", "U2"),
+        ]
+        
+        for original, expected in test_cases:
+            result = Cube.reverse_formula(original)
+            self.assertEqual(result, expected, 
+                           f"reverse_formula('{original}') should be '{expected}', got '{result}'")
+    
+    def test_reverse_formula_sequences(self):
+        """Test reverse_formula with move sequences."""
+        test_cases = [
+            ("R U", "U' R'"),
+            ("R U R'", "R U' R'"),
+            ("R U R' U'", "U R U' R'"),
+            ("R2 U' F D2", "D2 F' U R2"),
+            ("L D L' D'", "D L D' L'"),
+        ]
+        
+        for original, expected in test_cases:
+            result = Cube.reverse_formula(original)
+            self.assertEqual(result, expected,
+                           f"reverse_formula('{original}') should be '{expected}', got '{result}'")
+    
+    def test_reverse_formula_all_move_types(self):
+        """Test reverse_formula with different move types."""
+        # Test all basic moves
+        basic_moves = "U D L R F B"
+        result = Cube.reverse_formula(basic_moves)
+        expected = "B' F' R' L' D' U'"
+        self.assertEqual(result, expected)
+        
+        # Test slice moves
+        slice_moves = "M E S"
+        result = Cube.reverse_formula(slice_moves)
+        expected = "S' E' M'"
+        self.assertEqual(result, expected)
+        
+        # Test wide moves
+        wide_moves = "r l u d f b"
+        result = Cube.reverse_formula(wide_moves)
+        expected = "b' f' d' u' l' r'"
+        self.assertEqual(result, expected)
+        
+        # Test cube rotations
+        rotations = "x y z"
+        result = Cube.reverse_formula(rotations)
+        expected = "z' y' x'"
+        self.assertEqual(result, expected)
+    
+    def test_reverse_formula_mixed_modifiers(self):
+        """Test reverse_formula with mixed prime and double moves."""
+        test_cases = [
+            ("R U' R2 F' D", "D' F R2 U R'"),
+            ("x' y2 z M' E2 S", "S' E2 M z' y2 x"),  # Fixed: z becomes z'
+            ("r' u2 f d' l2 b", "b' l2 d f' u2 r"),
+        ]
+        
+        for original, expected in test_cases:
+            result = Cube.reverse_formula(original)
+            self.assertEqual(result, expected,
+                           f"reverse_formula('{original}') should be '{expected}', got '{result}'")
+    
+    def test_reverse_formula_identity_property(self):
+        """Test that applying formula + reversed formula returns to solved state."""
+        test_formulas = [
+            "R U R' U'",
+            "R U R' F' R U R' U' R' F R2 U' R'",  # T-Perm
+            "M2 U M2 U2 M2 U M2",  # H-Perm
+            "x y z x' y' z'",  # Rotation sequence
+            "r U r' F R F'",  # Wide move sequence
+        ]
+        
+        for formula in test_formulas:
+            # Start with solved cube
+            self.cube.reset()
+            self.assertTrue(self.cube.is_solved())
+            
+            # Apply formula
+            self.cube.turn(formula)
+            
+            # Apply reversed formula
+            reversed_formula = Cube.reverse_formula(formula)
+            self.cube.turn(reversed_formula)
+            
+            # Should be back to solved state
+            self.assertTrue(self.cube.is_solved(),
+                          f"Formula '{formula}' + reversed should return to solved state")
+    
+    def test_reverse_formula_empty_string(self):
+        """Test reverse_formula with empty string."""
+        result = Cube.reverse_formula("")
+        self.assertEqual(result, "")
+    
+    def test_reverse_formula_single_space(self):
+        """Test reverse_formula with strings containing extra spaces."""
+        # Should handle extra spaces gracefully
+        result = Cube.reverse_formula("R  U   R'")  # Extra spaces
+        expected = "R U' R'"
+        self.assertEqual(result, expected)
+    
+    def test_reverse_formula_complex_algorithms(self):
+        """Test reverse_formula with complex algorithms."""
+        # Test with some well-known algorithms
+        algorithms = [
+            ("R U R' U' R U R' U' R U R' U' R U R' U'", # Sexy move x4
+             "U R U' R' U R U' R' U R U' R' U R U' R'"),
+            ("R U2 R' D R U' R' D'",  # A basic commutator
+             "D R U R' D' R U2 R'"),
+        ]
+        
+        for original, expected in algorithms:
+            result = Cube.reverse_formula(original)
+            self.assertEqual(result, expected)
+            
+            # Also test that it actually works on the cube
+            self.cube.reset()
+            self.cube.turn(original)
+            self.cube.turn(result)
+            self.assertTrue(self.cube.is_solved())
+    
     def test_cube_rotations(self):
         """Test cube rotations (x, y, z)."""
         self.cube.turn("x")

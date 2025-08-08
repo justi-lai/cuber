@@ -986,6 +986,66 @@ class Cube:
         else:
             raise ValueError(f"Invalid face '{move}' in double turn.")
 
+    @staticmethod
+    def reverse_formula(formula: str) -> str:
+        """
+        Reverses a Rubik's Cube formula to undo the effects of the original sequence.
+        
+        This method creates the inverse of a move sequence by:
+        1. Reversing the order of moves
+        2. Converting each move to its inverse:
+           - Regular moves (R, U, F, etc.) become prime moves (R', U', F', etc.)
+           - Prime moves (R', U', F', etc.) become regular moves (R, U, F, etc.)
+           - Double moves (R2, U2, F2, etc.) remain unchanged (self-inverse)
+        
+        The resulting formula, when applied after the original, will return the cube
+        to its original state.
+        
+        Supports all move types:
+        - Basic face moves: U, D, L, R, F, B
+        - Slice moves: M, E, S
+        - Wide moves: r, l, u, d, f, b
+        - Cube rotations: x, y, z
+        - All with modifiers: ' (prime) and 2 (double)
+        
+        Args:
+            formula (str): Space-separated string of cube moves to reverse.
+                          Can contain any valid Rubik's cube notation.
+        
+        Returns:
+            str: The reversed formula that undoes the original sequence.
+        
+        Examples:
+            >>> Cube.reverse_formula("R U R'")
+            "R U' R'"
+            
+            >>> Cube.reverse_formula("R U R' U'")
+            "U R U' R'"
+            
+            >>> Cube.reverse_formula("R2 U' F D2")
+            "D2 F' U R2"
+            
+            >>> # Verify reversal works
+            >>> cube = Cube()
+            >>> original = "R U R' U' F R F'"
+            >>> cube.turn(original)
+            >>> cube.turn(Cube.reverse_formula(original))
+            >>> cube.is_solved()  # Should be True
+            
+        Note:
+            This is a static method and can be called without creating a Cube instance.
+        """
+        reversed_formula = formula.split()
+        reversed_formula.reverse()
+        result = []
+        for move in reversed_formula:
+            if move.endswith("'"):
+                result.append(move[0])
+            elif move.endswith("2"):
+                result.append(move)
+            else:
+                result.append(move + "'")
+        return " ".join(result)
 
 if __name__ == "__main__":
     my_cube = Cube()

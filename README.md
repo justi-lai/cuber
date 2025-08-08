@@ -99,9 +99,7 @@ I wanted a Rubik's Cube simulator that was:
 
 ## Current Improvements (Planned/Upcoming)
 
-- Direct access to each face's stickers (for inspection or export)
 - Initialize a cube directly from a sticker format
-- Reverse a set of moves (generate the inverse algorithm)
 
 ## Future Objectives
 
