@@ -12,6 +12,7 @@ I created this project because I found that [pycuber](https://github.com/adrianl
 - **Customizable Moves:** Supports all standard face turns (`U`, `D`, `L`, `R`, `F`, `B`), slice moves (`M`, `E`, `S`), wide moves (`r`, `l`, `u`, `d`, `f`, `b`), and whole-cube rotations (`x`, `y`, `z`), including their inverses and double turns.
 - **Accurate Orientation:** Each cubie tracks its own orientation, ensuring realistic behavior.
 - **Unfolded Display:** Prints a 2D unfolded view of the cube for easy visualization.
+- **Solved State Checking:** Check if the cube is solved with a single method call. (Future: will support checking for specific states like F2L, cross, or blocks.)
 - **Minimal Dependencies:** Only requires `numpy` (see `requirements.txt`).
 
 ## Usage
@@ -24,6 +25,41 @@ cube.show()  # Display the solved state
 
 cube.turn("U L2 D' L2 F R U D' F' L' B2 R D2 B2 R2 U2 F2 R' F2 R2 F2")  # Perform moves
 cube.show()           # See the result
+```
+
+## Sticker Initialization
+
+You can initialize a cube with custom stickers using either a dictionary or a list format:
+
+- **Dictionary format:** Map each face ('U', 'D', 'L', 'R', 'F', 'B') to a 3x3 array of color strings. Example:
+
+```python
+stickers = {
+    'U': [['W', 'W', 'W'], ['W', 'W', 'W'], ['W', 'W', 'W']],
+    'D': [['Y', 'Y', 'Y'], ['Y', 'Y', 'Y'], ['Y', 'Y', 'Y']],
+    'L': [['O', 'O', 'O'], ['O', 'O', 'O'], ['O', 'O', 'O']],
+    'R': [['R', 'R', 'R'], ['R', 'R', 'R'], ['R', 'R', 'R']],
+    'F': [['G', 'G', 'G'], ['G', 'G', 'G'], ['G', 'G', 'G']],
+    'B': [['B', 'B', 'B'], ['B', 'B', 'B'], ['B', 'B', 'B']]
+}
+cube = Cube(stickers)
+```
+
+- **List format:** Provide a 54-element list of colors in the order U, L, F, R, B, D (each face in ULFRBD order with stickers ordered from left-to-right, top-to-bottom):
+
+```python
+cube = Cube(['W']*9 + ['O']*9 + ['G']*9 + ['R']*9 + ['B']*9 + ['Y']*9)
+```
+
+- **Default:** If no stickers are provided, the cube is initialized in the solved state.
+
+You can check if the cube is solved at any time:
+
+```python
+if cube.is_solved():
+    print("Cube is solved!")
+else:
+    print("Cube is not solved.")
 ```
 
 Example output of `cube.show()`:
