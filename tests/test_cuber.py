@@ -218,7 +218,7 @@ class TestCube(unittest.TestCase):
     def test_get_face_method(self):
         """Test the public get_face method."""
         # Test single face
-        face_dict = self.cube.get_face('U')
+        face_dict = self.cube.get_faces('U')
         self.assertIn('U', face_dict)
         self.assertEqual(len(face_dict['U']), 3)  # 3 rows
         self.assertEqual(len(face_dict['U'][0]), 3)  # 3 columns
@@ -229,7 +229,7 @@ class TestCube(unittest.TestCase):
                 self.assertEqual(square, 'W')
         
         # Test multiple faces
-        multiple_faces = self.cube.get_face('UDL')
+        multiple_faces = self.cube.get_faces('UDL')
         self.assertEqual(len(multiple_faces), 3)
         self.assertIn('U', multiple_faces)
         self.assertIn('D', multiple_faces)
@@ -248,7 +248,7 @@ class TestCube(unittest.TestCase):
     
     def test_get_face_all_faces(self):
         """Test get_face method with all faces."""
-        all_faces = self.cube.get_face('UDLRFB')
+        all_faces = self.cube.get_faces('UDLRFB')
         self.assertEqual(len(all_faces), 6)
         
         expected_colors = {'U': 'W', 'D': 'Y', 'L': 'O', 'R': 'R', 'F': 'G', 'B': 'B'}
@@ -671,6 +671,234 @@ class TestCube(unittest.TestCase):
         for pos in state1:
             self.assertEqual(state1[pos], state2[pos], 
                            f"States differ at position {pos}")
+
+    def test_sticker_initialization_dict_solved(self):
+        """Test sticker initialization with dictionary format - solved cube."""
+        solved_dict = {
+            'U': [['W', 'W', 'W'], ['W', 'W', 'W'], ['W', 'W', 'W']],
+            'D': [['Y', 'Y', 'Y'], ['Y', 'Y', 'Y'], ['Y', 'Y', 'Y']],
+            'L': [['O', 'O', 'O'], ['O', 'O', 'O'], ['O', 'O', 'O']],
+            'R': [['R', 'R', 'R'], ['R', 'R', 'R'], ['R', 'R', 'R']],
+            'F': [['G', 'G', 'G'], ['G', 'G', 'G'], ['G', 'G', 'G']],
+            'B': [['B', 'B', 'B'], ['B', 'B', 'B'], ['B', 'B', 'B']]
+        }
+        
+        cube = Cube(solved_dict)
+        self.assertTrue(cube.is_solved())
+        self.assertTrue(cube.is_valid())
+        
+        # Verify each face matches expected colors
+        expected_colors = {'U': 'W', 'D': 'Y', 'L': 'O', 'R': 'R', 'F': 'G', 'B': 'B'}
+        for face, expected_color in expected_colors.items():
+            face_map = cube._get_face_map(face)
+            for i in range(3):
+                for j in range(3):
+                    self.assertEqual(face_map[i, j], expected_color,
+                                   f"Face {face} at position ({i},{j}) should be {expected_color}")
+
+    def test_sticker_initialization_dict_scrambled(self):
+        """Test sticker initialization with dictionary format - scrambled cube."""
+        scrambled_dict = {
+            'U': [['W', 'R', 'W'], ['G', 'W', 'B'], ['W', 'Y', 'W']],
+            'D': [['Y', 'O', 'Y'], ['R', 'Y', 'G'], ['Y', 'W', 'Y']],
+            'L': [['O', 'W', 'O'], ['B', 'O', 'Y'], ['O', 'R', 'O']],
+            'R': [['R', 'G', 'R'], ['W', 'R', 'O'], ['R', 'B', 'R']],
+            'F': [['G', 'Y', 'G'], ['O', 'G', 'R'], ['G', 'W', 'G']],
+            'B': [['B', 'R', 'B'], ['Y', 'B', 'W'], ['B', 'G', 'B']]
+        }
+        
+        cube = Cube(scrambled_dict)
+        self.assertFalse(cube.is_solved())
+        self.assertFalse(cube.is_valid())  # This particular scramble has wrong color counts
+        
+        # Verify specific positions match input
+        u_face = cube._get_face_map('U')
+        self.assertEqual(u_face[0, 1], 'R')  # Top middle should be red
+        self.assertEqual(u_face[1, 1], 'W')  # Center should be white
+        self.assertEqual(u_face[2, 1], 'Y')  # Bottom middle should be yellow
+
+    def test_sticker_initialization_list_solved(self):
+        """Test sticker initialization with 1D list format - solved cube."""
+        # Order: U, L, F, R, B, D (9 stickers each)
+        solved_list = ['W']*9 + ['O']*9 + ['G']*9 + ['R']*9 + ['B']*9 + ['Y']*9
+        
+        cube = Cube(solved_list)
+        self.assertTrue(cube.is_solved())
+        self.assertTrue(cube.is_valid())
+        
+        # Verify each face has correct color
+        expected_colors = {'U': 'W', 'D': 'Y', 'L': 'O', 'R': 'R', 'F': 'G', 'B': 'B'}
+        for face, expected_color in expected_colors.items():
+            face_map = cube._get_face_map(face)
+            for i in range(3):
+                for j in range(3):
+                    self.assertEqual(face_map[i, j], expected_color)
+
+    def test_sticker_initialization_list_custom(self):
+        """Test sticker initialization with 1D list format - custom pattern."""
+        # Create a specific pattern: U face with different colors in specific positions
+        u_pattern = ['W', 'R', 'W', 'G', 'W', 'B', 'W', 'Y', 'W']  # W with colored edges
+        custom_list = u_pattern + ['O']*9 + ['G']*9 + ['R']*9 + ['B']*9 + ['Y']*9
+        
+        cube = Cube(custom_list)
+        
+        # Verify the U face pattern
+        u_face = cube._get_face_map('U')
+        expected_u = np.array([['W', 'R', 'W'], ['G', 'W', 'B'], ['W', 'Y', 'W']])
+        np.testing.assert_array_equal(u_face, expected_u)
+
+    def test_sticker_initialization_invalid_dict_missing_face(self):
+        """Test that dictionary initialization fails with missing faces."""
+        incomplete_dict = {
+            'U': [['W', 'W', 'W'], ['W', 'W', 'W'], ['W', 'W', 'W']],
+            'D': [['Y', 'Y', 'Y'], ['Y', 'Y', 'Y'], ['Y', 'Y', 'Y']],
+            'L': [['O', 'O', 'O'], ['O', 'O', 'O'], ['O', 'O', 'O']],
+            'R': [['R', 'R', 'R'], ['R', 'R', 'R'], ['R', 'R', 'R']],
+            'F': [['G', 'G', 'G'], ['G', 'G', 'G'], ['G', 'G', 'G']]
+            # Missing 'B' face
+        }
+        
+        with self.assertRaises(ValueError) as context:
+            Cube(incomplete_dict)
+        self.assertIn("exactly these face keys", str(context.exception))
+
+    def test_sticker_initialization_invalid_dict_wrong_size(self):
+        """Test that dictionary initialization fails with wrong face size."""
+        invalid_size_dict = {
+            'U': [['W', 'W'], ['W', 'W']],  # 2x2 instead of 3x3
+            'D': [['Y', 'Y', 'Y'], ['Y', 'Y', 'Y'], ['Y', 'Y', 'Y']],
+            'L': [['O', 'O', 'O'], ['O', 'O', 'O'], ['O', 'O', 'O']],
+            'R': [['R', 'R', 'R'], ['R', 'R', 'R'], ['R', 'R', 'R']],
+            'F': [['G', 'G', 'G'], ['G', 'G', 'G'], ['G', 'G', 'G']],
+            'B': [['B', 'B', 'B'], ['B', 'B', 'B'], ['B', 'B', 'B']]
+        }
+        
+        with self.assertRaises(ValueError) as context:
+            Cube(invalid_size_dict)
+        self.assertIn("must be a 3x3 array", str(context.exception))
+
+    def test_sticker_initialization_invalid_list_wrong_length(self):
+        """Test that list initialization fails with wrong length."""
+        with self.assertRaises(ValueError) as context:
+            Cube(['W'] * 50)  # Should be 54
+        self.assertIn("exactly 54 colors", str(context.exception))
+        
+        with self.assertRaises(ValueError) as context:
+            Cube(['W'] * 60)  # Should be 54
+        self.assertIn("exactly 54 colors", str(context.exception))
+
+    def test_sticker_initialization_invalid_type(self):
+        """Test that initialization fails with invalid type."""
+        with self.assertRaises(ValueError) as context:
+            Cube("invalid_string")
+        self.assertIn("must be None, dict, or list", str(context.exception))
+        
+        with self.assertRaises(ValueError) as context:
+            Cube(123)
+        self.assertIn("must be None, dict, or list", str(context.exception))
+
+    def test_is_valid_solved_cube(self):
+        """Test that is_valid returns True for a solved cube."""
+        cube = Cube()
+        self.assertTrue(cube.is_valid())
+
+    def test_is_valid_after_moves(self):
+        """Test that is_valid returns True after valid moves."""
+        cube = Cube()
+        cube.turn("R U R' U'")  # Sexy move
+        self.assertTrue(cube.is_valid())
+
+    def test_is_valid_invalid_color_count(self):
+        """Test that is_valid returns False for invalid color counts."""
+        invalid_dict = {
+            'U': [['W', 'W', 'W'], ['W', 'W', 'W'], ['W', 'W', 'W']],
+            'D': [['W', 'W', 'W'], ['W', 'W', 'W'], ['W', 'W', 'W']],  # Too many W's
+            'L': [['O', 'O', 'O'], ['O', 'O', 'O'], ['O', 'O', 'O']],
+            'R': [['R', 'R', 'R'], ['R', 'R', 'R'], ['R', 'R', 'R']],
+            'F': [['G', 'G', 'G'], ['G', 'G', 'G'], ['G', 'G', 'G']],
+            'B': [['B', 'B', 'B'], ['B', 'B', 'B'], ['B', 'B', 'B']]
+        }
+        
+        cube = Cube(invalid_dict)
+        self.assertFalse(cube.is_valid())
+
+    def test_is_valid_duplicate_centers(self):
+        """Test that is_valid returns False for duplicate center colors."""
+        invalid_centers_dict = {
+            'U': [['W', 'W', 'W'], ['W', 'W', 'W'], ['W', 'W', 'W']],
+            'D': [['Y', 'Y', 'Y'], ['Y', 'W', 'Y'], ['Y', 'Y', 'Y']],  # W center (same as U)
+            'L': [['O', 'O', 'O'], ['O', 'O', 'O'], ['O', 'O', 'O']],
+            'R': [['R', 'R', 'R'], ['R', 'R', 'R'], ['R', 'R', 'R']],
+            'F': [['G', 'G', 'G'], ['G', 'G', 'G'], ['G', 'G', 'G']],
+            'B': [['B', 'B', 'B'], ['B', 'B', 'B'], ['B', 'B', 'B']]
+        }
+        
+        cube = Cube(invalid_centers_dict)
+        self.assertFalse(cube.is_valid())
+
+    def test_sticker_dict_vs_solved_equivalence(self):
+        """Test that dictionary initialization with solved pattern equals default cube."""
+        solved_dict = {
+            'U': [['W', 'W', 'W'], ['W', 'W', 'W'], ['W', 'W', 'W']],
+            'D': [['Y', 'Y', 'Y'], ['Y', 'Y', 'Y'], ['Y', 'Y', 'Y']],
+            'L': [['O', 'O', 'O'], ['O', 'O', 'O'], ['O', 'O', 'O']],
+            'R': [['R', 'R', 'R'], ['R', 'R', 'R'], ['R', 'R', 'R']],
+            'F': [['G', 'G', 'G'], ['G', 'G', 'G'], ['G', 'G', 'G']],
+            'B': [['B', 'B', 'B'], ['B', 'B', 'B'], ['B', 'B', 'B']]
+        }
+        
+        cube1 = Cube()
+        cube2 = Cube(solved_dict)
+        
+        # Compare all faces
+        for face in 'UDLRFB':
+            face1 = cube1._get_face_map(face)
+            face2 = cube2._get_face_map(face)
+            np.testing.assert_array_equal(face1, face2, 
+                                        f"Face {face} should be identical between default and dict initialization")
+
+    def test_sticker_list_vs_solved_equivalence(self):
+        """Test that list initialization with solved pattern equals default cube."""
+        solved_list = ['W']*9 + ['O']*9 + ['G']*9 + ['R']*9 + ['B']*9 + ['Y']*9
+        
+        cube1 = Cube()
+        cube2 = Cube(solved_list)
+        
+        # Compare all faces
+        for face in 'UDLRFB':
+            face1 = cube1._get_face_map(face)
+            face2 = cube2._get_face_map(face)
+            np.testing.assert_array_equal(face1, face2,
+                                        f"Face {face} should be identical between default and list initialization")
+
+    def test_sticker_dict_vs_list_equivalence(self):
+        """Test that dictionary and list initialization produce equivalent results."""
+        # Create same pattern using both methods
+        pattern_dict = {
+            'U': [['W', 'R', 'W'], ['G', 'W', 'B'], ['W', 'Y', 'W']],
+            'D': [['Y', 'O', 'Y'], ['R', 'Y', 'G'], ['Y', 'W', 'Y']],
+            'L': [['O', 'W', 'O'], ['B', 'O', 'Y'], ['O', 'R', 'O']],
+            'R': [['R', 'G', 'R'], ['W', 'R', 'O'], ['R', 'B', 'R']],
+            'F': [['G', 'Y', 'G'], ['O', 'G', 'R'], ['G', 'W', 'G']],
+            'B': [['B', 'R', 'B'], ['Y', 'B', 'W'], ['B', 'G', 'B']]
+        }
+        
+        # Convert to list format: U, L, F, R, B, D
+        pattern_list = []
+        for face_char in 'ULFRBD':
+            face_data = pattern_dict[face_char]
+            for row in face_data:
+                pattern_list.extend(row)
+        
+        cube1 = Cube(pattern_dict)
+        cube2 = Cube(pattern_list)
+        
+        # Compare all faces
+        for face in 'UDLRFB':
+            face1 = cube1._get_face_map(face)
+            face2 = cube2._get_face_map(face)
+            np.testing.assert_array_equal(face1, face2,
+                                        f"Face {face} should be identical between dict and list initialization")
 
 
 class TestCubeIntegration(unittest.TestCase):

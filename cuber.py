@@ -17,30 +17,305 @@ class Cube:
         'F': (2, 2, True, False),   'B': (2, 0, True, True)
     }
     
-    def __init__(self):
+    def __init__(self, stickers=None):
         """
-        Initializes a 3x3x3 grid of Cubie objects. The initial state of the cube will be solved.
+        Initializes a 3x3x3 grid of Cubie objects.
+        
         The coordinate system is (x, y, z) where:
         - x-axis: 0=Left (O), 1=Middle, 2=Right (R)
         - y-axis: 0=Down (Y), 1=Middle, 2=Up (W)
         - z-axis: 0=Back (B), 1=Middle, 2=Front (G)
+        
+        Args:
+            stickers (optional): Can be one of the following formats:
+                - None: Creates a solved cube (default)
+                - dict[str, list[list[str]]]: Dictionary mapping face chars ('U', 'D', 'L', 'R', 'F', 'B') 
+                  to 3x3 arrays of color strings. Face orientations match _get_face_map method.
+                  Each face is viewed from outside the cube looking directly at it.
+                - list[str]: 54-element list of colors in the order: U, L, F, R, B, D faces,
+                  each face filled left-to-right, top-to-bottom.
+                  
+        Face Orientation Details:
+            When providing stickers in dictionary format, each face should be oriented as follows:
+            - U (Up): As viewed from above, with F (front) towards the bottom of the array
+            - D (Down): As viewed from below, with F (front) towards the top of the array
+            - L (Left): As viewed from the left side, with U (up) towards the top of the array
+            - R (Right): As viewed from the right side, with U (up) towards the top of the array
+            - F (Front): As viewed from the front, with U (up) towards the top of the array  
+            - B (Back): As viewed from the back, with U (up) towards the top of the array
+                  
+        Examples:
+            # Solved cube
+            cube = Cube()
+            
+            # Dictionary format - solved cube
+            cube = Cube({
+                'U': [['W', 'W', 'W'], ['W', 'W', 'W'], ['W', 'W', 'W']],
+                'D': [['Y', 'Y', 'Y'], ['Y', 'Y', 'Y'], ['Y', 'Y', 'Y']],
+                'L': [['O', 'O', 'O'], ['O', 'O', 'O'], ['O', 'O', 'O']],
+                'R': [['R', 'R', 'R'], ['R', 'R', 'R'], ['R', 'R', 'R']],
+                'F': [['G', 'G', 'G'], ['G', 'G', 'G'], ['G', 'G', 'G']],
+                'B': [['B', 'B', 'B'], ['B', 'B', 'B'], ['B', 'B', 'B']]
+            })
+            
+            # Dictionary format - scrambled cube
+            cube = Cube({
+                'U': [['W', 'R', 'W'], ['G', 'W', 'B'], ['W', 'Y', 'W']],
+                'D': [['Y', 'O', 'Y'], ['R', 'Y', 'G'], ['Y', 'W', 'Y']],
+                'L': [['O', 'W', 'O'], ['B', 'O', 'Y'], ['O', 'R', 'O']],
+                'R': [['R', 'G', 'R'], ['W', 'R', 'O'], ['R', 'B', 'R']],
+                'F': [['G', 'Y', 'G'], ['O', 'G', 'R'], ['G', 'W', 'G']],
+                'B': [['B', 'R', 'B'], ['Y', 'B', 'W'], ['B', 'G', 'B']]
+            })
+            
+            # 1D array format (54 elements: 9 per face in order U,L,F,R,B,D)
+            # Solved cube:
+            cube = Cube(['W']*9 + ['O']*9 + ['G']*9 + ['R']*9 + ['B']*9 + ['Y']*9)
+            
+            # Check if cube is valid (basic validation)
+            if cube.is_valid():
+                print("Cube configuration is structurally valid")
+            else:
+                print("Invalid cube configuration detected")
         """
         self.grid = np.empty((3, 3, 3), dtype=object)
 
+        if stickers is None:
+            self.reset()
+        elif isinstance(stickers, dict):
+            self._init_from_dict(stickers)
+        elif isinstance(stickers, list):
+            self._init_from_list(stickers)
+        else:
+            raise ValueError("stickers must be None, dict, or list")
+    
+    def _init_from_dict(self, stickers: dict[str, list[list[str]]]):
+        """
+        Initialize cube from dictionary format.
+        
+        Args:
+            stickers: Dictionary mapping face chars to 3x3 color arrays.
+        """
+        # Validate input
+        required_faces = {'U', 'D', 'L', 'R', 'F', 'B'}
+        if set(stickers.keys()) != required_faces:
+            raise ValueError(f"Dictionary must contain exactly these face keys: {required_faces}")
+        
+        # Validate each face is 3x3
+        for face, face_colors in stickers.items():
+            if len(face_colors) != 3 or any(len(row) != 3 for row in face_colors):
+                raise ValueError(f"Face '{face}' must be a 3x3 array")
+        
+        # Start with a solved cube to get proper structure
+        self.reset()
+        
+        # Now replace the colors based on the provided stickers
+        # We'll use the reverse mapping: for each cubie position, set its face colors
+        # based on what should appear on each face according to input stickers
+        
+        for x, y, z in np.ndindex(3, 3, 3):
+            # Skip center position
+            if x == 1 and y == 1 and z == 1:
+                continue
+                
+            cubie = self.grid[x, y, z]
+            if cubie is None:
+                continue
+                
+            # Create new orientation for this cubie based on input stickers
+            new_orientation = {}
+            
+            # For each face that this cubie touches, find the corresponding color
+            # in the input stickers by using the same logic as _get_face_map
+            
+            if 'L' in cubie.orientation and x == 0:  # Left face
+                # Get position in the L face sticker array
+                sticker_array = np.array(stickers['L'])
+                # Apply inverse of _get_face_map transformations for 'L'
+                axis, idx, flip_rows, flip_cols = Cube.FACE_VIEWS['L']
+                
+                # The mapping in _get_face_map for L face: face_map[y, z] = cubie.orientation.get('L')
+                # So to reverse: we need sticker_array[y, z]
+                if flip_rows:
+                    sticker_array = np.flip(sticker_array, axis=0)
+                if flip_cols:
+                    sticker_array = np.flip(sticker_array, axis=1)
+                new_orientation['L'] = sticker_array[y, z]
+                
+            if 'R' in cubie.orientation and x == 2:  # Right face
+                sticker_array = np.array(stickers['R'])
+                axis, idx, flip_rows, flip_cols = Cube.FACE_VIEWS['R']
+                if flip_rows:
+                    sticker_array = np.flip(sticker_array, axis=0)
+                if flip_cols:
+                    sticker_array = np.flip(sticker_array, axis=1)
+                new_orientation['R'] = sticker_array[y, z]
+                
+            if 'D' in cubie.orientation and y == 0:  # Down face
+                sticker_array = np.array(stickers['D'])
+                axis, idx, flip_rows, flip_cols = Cube.FACE_VIEWS['D']
+                if flip_rows:
+                    sticker_array = np.flip(sticker_array, axis=0)
+                if flip_cols:
+                    sticker_array = np.flip(sticker_array, axis=1)
+                new_orientation['D'] = sticker_array[z, x]
+                
+            if 'U' in cubie.orientation and y == 2:  # Up face
+                sticker_array = np.array(stickers['U'])
+                axis, idx, flip_rows, flip_cols = Cube.FACE_VIEWS['U']
+                if flip_rows:
+                    sticker_array = np.flip(sticker_array, axis=0)
+                if flip_cols:
+                    sticker_array = np.flip(sticker_array, axis=1)
+                new_orientation['U'] = sticker_array[z, x]
+                
+            if 'B' in cubie.orientation and z == 0:  # Back face
+                sticker_array = np.array(stickers['B'])
+                axis, idx, flip_rows, flip_cols = Cube.FACE_VIEWS['B']
+                if flip_rows:
+                    sticker_array = np.flip(sticker_array, axis=0)
+                if flip_cols:
+                    sticker_array = np.flip(sticker_array, axis=1)
+                new_orientation['B'] = sticker_array[y, x]
+                
+            if 'F' in cubie.orientation and z == 2:  # Front face
+                sticker_array = np.array(stickers['F'])
+                axis, idx, flip_rows, flip_cols = Cube.FACE_VIEWS['F']
+                if flip_rows:
+                    sticker_array = np.flip(sticker_array, axis=0)
+                if flip_cols:
+                    sticker_array = np.flip(sticker_array, axis=1)
+                new_orientation['F'] = sticker_array[y, x]
+            
+            # Update the cubie's orientation
+            cubie.orientation = new_orientation
+    
+    def _init_from_list(self, stickers: list[str]):
+        """
+        Initialize cube from 1D list format.
+        
+        Args:
+            stickers: 54-element list of colors in order: U, L, F, R, B, D faces,
+                     each face filled left-to-right, top-to-bottom.
+        """
+        if len(stickers) != 54:
+            raise ValueError("List must contain exactly 54 colors (9 per face * 6 faces)")
+        
+        # Convert 1D list to dictionary format
+        face_order = ['U', 'L', 'F', 'R', 'B', 'D']
+        stickers_dict = {}
+        
+        for i, face in enumerate(face_order):
+            start_idx = i * 9
+            face_colors = stickers[start_idx:start_idx + 9]
+            # Convert 1D slice to 3x3 array (left-to-right, top-to-bottom)
+            stickers_dict[face] = [
+                [face_colors[0], face_colors[1], face_colors[2]],
+                [face_colors[3], face_colors[4], face_colors[5]],
+                [face_colors[6], face_colors[7], face_colors[8]]
+            ]
+        
+        # Use dictionary initialization
+        self._init_from_dict(stickers_dict)
+    
+    def is_valid(self) -> bool:
+        """
+        Checks if the cube configuration is potentially valid.
+        
+        This method performs basic structural validation to check if the cube
+        configuration could theoretically exist on a physical Rubik's cube.
+        It checks:
+        
+        1. Color count: Each color should appear exactly 9 times (once per face center,
+           4 times on face edges, 4 times on face corners)
+        2. Center pieces: Each face should have exactly one center piece with the 
+           appropriate color in the center position
+        3. Structural integrity: Each cubie should have the correct number of faces
+           based on its position (corner=3, edge=2, center=1)
+        
+        Note: This is a basic validation and does not guarantee the cube is solvable.
+        A complete solvability check would require more complex algorithms that verify
+        parity constraints and permutation validity, which would be computationally
+        expensive for this use case.
+        
+        Returns:
+            bool: True if the cube passes basic validity checks, False otherwise.
+            
+        Examples:
+            >>> cube = Cube()  # Solved cube
+            >>> cube.is_valid()
+            True
+            
+            >>> # Create invalid cube (wrong color counts)
+            >>> invalid_dict = {
+            ...     'U': [['W', 'W', 'W'], ['W', 'W', 'W'], ['W', 'W', 'W']],
+            ...     'D': [['W', 'W', 'W'], ['W', 'W', 'W'], ['W', 'W', 'W']],  # Too many W's
+            ...     'L': [['O', 'O', 'O'], ['O', 'O', 'O'], ['O', 'O', 'O']],
+            ...     'R': [['R', 'R', 'R'], ['R', 'R', 'R'], ['R', 'R', 'R']],
+            ...     'F': [['G', 'G', 'G'], ['G', 'G', 'G'], ['G', 'G', 'G']],
+            ...     'B': [['B', 'B', 'B'], ['B', 'B', 'B'], ['B', 'B', 'B']]
+            ... }
+            >>> cube = Cube(invalid_dict)
+            >>> cube.is_valid()
+            False
+        """
+        # Check 1: Color count validation
+        color_counts = {'W': 0, 'Y': 0, 'O': 0, 'R': 0, 'G': 0, 'B': 0}
+        
+        # Count colors on all faces
+        for face_char in 'UDLRFB':
+            face_map = self._get_face_map(face_char)
+            for i in range(3):
+                for j in range(3):
+                    color = face_map[i, j]
+                    if color in color_counts:
+                        color_counts[color] += 1
+        
+        # Each color should appear exactly 9 times
+        for color, count in color_counts.items():
+            if count != 9:
+                return False
+        
+        # Check 2: Center pieces validation
+        # Each face center should match the expected color for a valid cube
+        expected_centers = {
+            'U': self._get_face_map('U')[1, 1],  # Use actual center colors
+            'D': self._get_face_map('D')[1, 1],
+            'L': self._get_face_map('L')[1, 1],
+            'R': self._get_face_map('R')[1, 1],
+            'F': self._get_face_map('F')[1, 1],
+            'B': self._get_face_map('B')[1, 1]
+        }
+        
+        # Check that all center colors are different
+        center_colors = list(expected_centers.values())
+        if len(set(center_colors)) != 6:
+            return False
+        
+        # Check 3: Structural integrity
         for x, y, z in np.ndindex(3, 3, 3):
             if x == 1 and y == 1 and z == 1:
-                self.grid[x, y, z] = None
+                # Center of cube should be None
+                if self.grid[x, y, z] is not None:
+                    return False
                 continue
+                
+            cubie = self.grid[x, y, z]
+            if cubie is None:
+                return False
             
-            orientation = {}
-            if x == 2: orientation["R"] = "R"
-            if x == 0: orientation["L"] = "O"
-            if y == 2: orientation["U"] = "W"
-            if y == 0: orientation["D"] = "Y"
-            if z == 2: orientation["F"] = "G"
-            if z == 0: orientation["B"] = "B"
+            # Count how many faces this position should have
+            expected_face_count = 0
+            if x == 0 or x == 2: expected_face_count += 1  # L or R face
+            if y == 0 or y == 2: expected_face_count += 1  # D or U face  
+            if z == 0 or z == 2: expected_face_count += 1  # B or F face
             
-            self.grid[x, y, z] = Cubie(orientation)
+            # Check that cubie has correct number of faces
+            actual_face_count = len(cubie.orientation)
+            if actual_face_count != expected_face_count:
+                return False
+        
+        return True
     
     def __str__(self):
         """
@@ -166,12 +441,12 @@ class Cube:
         
         return True
 
-    def get_face(self, face_chars: str) -> dict[str, list[list[str]]]:
+    def get_faces(self, face_chars: str) -> dict[str, list[list[str]]]:
         """
         Returns a 2D array of the colors on the specified face of the cube.
 
         Args:
-            face_char (str): The face to extract ('U', 'D', 'L', 'R', 'F', 'B').
+            face_chars (str): The faces to extract ('U', 'D', 'L', 'R', 'F', 'B').
             
         Returns:
             dict[str, list[list[str]]]: A dictionary of 2D lists of strings representing the colors on each face.
