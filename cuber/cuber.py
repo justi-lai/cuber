@@ -1,5 +1,8 @@
 import numpy as np
-from cubie import Cubie
+try:
+    from .cubie import Cubie
+except ImportError:
+    from cubie import Cubie
 
 MOVES = [
     "U", "U'", "U2", "D", "D'", "D2", "F", "F'", "F2", "B", "B'", "B2", "R", "R'", "R2", "L", "L'", "L2",
@@ -1019,7 +1022,7 @@ class Cube:
                 z_coord = z_offset
                 for x in range(3):
                     for y in range(3):
-                        self.grid[y, 2-x, z_coord] = move_slices[x, y, z_offset]
+                        self.grid[2-y, x, z_coord] = move_slices[x, y, z_offset]
             for cubie in self.grid[:, :, 0].flatten():
                 cubie.turn("B'")
             for cubie in self.grid[:, :, 1].flatten():

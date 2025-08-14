@@ -6,8 +6,8 @@ import numpy as np
 # Add the parent directory to the Python path so we can import cuber and cubie
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cuber import Cube
-from cubie import Cubie
+from ..cuber import Cube
+from ..cubie import Cubie
 
 
 class TestCubie(unittest.TestCase):
