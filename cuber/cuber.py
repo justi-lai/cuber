@@ -471,16 +471,34 @@ class Cube:
             >>> cube = Cube()
             >>> cube.get_faces_str("U")
             "W W W W W W W W W"
-            >>> cube.get_faces_str("U D L R F B")
-            "W W W W W W W W W Y Y Y Y Y Y Y Y Y Y O O O O O O O O O O R R R R R R R R R R G G G G G G G G G G B B B B B B B B B B"
+            >>> cube.get_faces_str("UD")
+            "W W W W W W W W W Y Y Y Y Y Y Y Y Y"
 
         Args:
             face_chars (str): The faces to extract ('U', 'D', 'L', 'R', 'F', 'B').
             
         Returns:
             str: A string representation of the faces of the cube.
+            
+        Raises:
+            ValueError: If any face character is not valid ('U', 'D', 'L', 'R', 'F', 'B').
         """
-        return " ".join([self._get_face_map(face_char).flatten().tolist() for face_char in face_chars])
+        if not face_chars:
+            return ""
+        
+        # Validate all face characters first
+        valid_faces = set('UDLRFB')
+        for face_char in face_chars:
+            if face_char not in valid_faces:
+                raise ValueError(f"Invalid face character: '{face_char}'. Must be one of: U, D, L, R, F, B")
+        
+        # Collect all face colors into a single flat list
+        all_colors = []
+        for face_char in face_chars:
+            face_colors = self._get_face_map(face_char).flatten().tolist()
+            all_colors.extend(face_colors)
+        
+        return " ".join(all_colors)
 
     def _get_face_map(self, face_char: str):
         """

@@ -6,8 +6,12 @@ import numpy as np
 # Add the parent directory to the Python path so we can import cuber and cubie
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ..cuber import Cube
-from ..cubie import Cubie
+try:
+    from ..cuber import Cube
+    from ..cubie import Cubie
+except ImportError:
+    from cuber import Cube
+    from cubie import Cubie
 
 
 class TestCubie(unittest.TestCase):
@@ -259,6 +263,106 @@ class TestCube(unittest.TestCase):
                 for square in row:
                     self.assertEqual(square, expected_color)
     
+    def test_get_faces_str_single_face(self):
+        """Test get_faces_str method with a single face."""
+        # Test with solved cube
+        result = self.cube.get_faces_str('U')
+        expected = "W W W W W W W W W"
+        self.assertEqual(result, expected)
+        
+        # Test each face individually on solved cube
+        expected_faces = {
+            'U': "W W W W W W W W W",
+            'D': "Y Y Y Y Y Y Y Y Y", 
+            'L': "O O O O O O O O O",
+            'R': "R R R R R R R R R",
+            'F': "G G G G G G G G G",
+            'B': "B B B B B B B B B"
+        }
+        
+        for face, expected_str in expected_faces.items():
+            with self.subTest(face=face):
+                result = self.cube.get_faces_str(face)
+                self.assertEqual(result, expected_str)
+    
+    def test_get_faces_str_multiple_faces(self):
+        """Test get_faces_str method with multiple faces."""
+        # Test two faces
+        result = self.cube.get_faces_str('UD')
+        expected = "W W W W W W W W W Y Y Y Y Y Y Y Y Y"
+        self.assertEqual(result, expected)
+        
+        # Test three faces
+        result = self.cube.get_faces_str('UDL')
+        expected = "W W W W W W W W W Y Y Y Y Y Y Y Y Y O O O O O O O O O"
+        self.assertEqual(result, expected)
+        
+        # Test all faces
+        result = self.cube.get_faces_str('UDLRFB')
+        expected = "W W W W W W W W W Y Y Y Y Y Y Y Y Y O O O O O O O O O R R R R R R R R R G G G G G G G G G B B B B B B B B B"
+        self.assertEqual(result, expected)
+    
+    def test_get_faces_str_empty_input(self):
+        """Test get_faces_str method with empty input."""
+        result = self.cube.get_faces_str('')
+        self.assertEqual(result, "")
+    
+    def test_get_faces_str_scrambled_cube(self):
+        """Test get_faces_str method after scrambling the cube."""
+        # Apply some moves to scramble
+        self.cube.turn("R U R' U'")
+        
+        # Test that it returns a string (exact content will vary)
+        result = self.cube.get_faces_str('U')
+        self.assertIsInstance(result, str)
+        
+        # Should have 17 characters (9 colors + 8 spaces)
+        self.assertEqual(len(result), 17)
+        
+        # Should contain only valid colors and spaces
+        valid_chars = set('WYGROBR ')
+        self.assertTrue(all(c in valid_chars for c in result))
+    
+    def test_get_faces_str_custom_stickers(self):
+        """Test get_faces_str method with custom sticker initialization."""
+        # Create cube with custom stickers
+        custom_stickers = {
+            'U': [['R', 'W', 'G'], ['B', 'W', 'Y'], ['O', 'W', 'R']],
+            'D': [['Y', 'Y', 'Y'], ['Y', 'Y', 'Y'], ['Y', 'Y', 'Y']],
+            'L': [['O', 'O', 'O'], ['O', 'O', 'O'], ['O', 'O', 'O']],
+            'R': [['R', 'R', 'R'], ['R', 'R', 'R'], ['R', 'R', 'R']],
+            'F': [['G', 'G', 'G'], ['G', 'G', 'G'], ['G', 'G', 'G']],
+            'B': [['B', 'B', 'B'], ['B', 'B', 'B'], ['B', 'B', 'B']]
+        }
+        
+        custom_cube = Cube(custom_stickers)
+        result = custom_cube.get_faces_str('U')
+        expected = "R W G B W Y O W R"
+        self.assertEqual(result, expected)
+    
+    def test_get_faces_str_invalid_face(self):
+        """Test get_faces_str method with invalid face character."""
+        with self.assertRaises(ValueError):
+            self.cube.get_faces_str('Z')
+    
+    def test_get_faces_str_face_order(self):
+        """Test that get_faces_str respects the order of faces provided."""
+        # Test different orderings give different results
+        result1 = self.cube.get_faces_str('UD')
+        result2 = self.cube.get_faces_str('DU')
+        
+        # They should be different (U colors first vs D colors first)
+        self.assertNotEqual(result1, result2)
+        
+        # But both should be valid strings
+        self.assertIsInstance(result1, str)
+        self.assertIsInstance(result2, str)
+        
+        # Test a complex reordering
+        faces_abcd = self.cube.get_faces_str('UDLR')
+        faces_dcba = self.cube.get_faces_str('RLDU')
+        self.assertNotEqual(faces_abcd, faces_dcba)
+
     def test_reset_method(self):
         """Test the reset method returns cube to solved state."""
         # Verify cube starts solved
