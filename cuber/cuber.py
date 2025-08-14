@@ -1,6 +1,12 @@
 import numpy as np
 from cubie import Cubie
 
+MOVES = [
+    "U", "U'", "U2", "D", "D'", "D2", "F", "F'", "F2", "B", "B'", "B2", "R", "R'", "R2", "L", "L'", "L2",
+    "u", "u'", "u2", "d", "d'", "d2", "f", "f'", "f2", "b", "b'", "b2", "r", "r'", "r2", "l", "l'", "l2",
+    "M", "M'", "M2", "E", "E'", "E2", "S", "S'", "S2", "x", "x'", "x2", "y", "y'", "y2", "z", "z'", "z2"
+]
+
 class Cube:
     """
     Represents the entire Rubik's Cube as a 3x3x3 grid of Cubie objects.
