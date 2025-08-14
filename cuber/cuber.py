@@ -459,6 +459,26 @@ class Cube:
         """
         return {face_char: self._get_face_map(face_char).tolist() for face_char in face_chars}
 
+    def get_faces_str(self, face_chars: str) -> str:
+        """
+        Returns a string representation of the faces of the cube.
+        The string is in the order of the faces in the face_chars parameter.
+
+        Examples:
+            >>> cube = Cube()
+            >>> cube.get_faces_str("U")
+            "W W W W W W W W W"
+            >>> cube.get_faces_str("U D L R F B")
+            "W W W W W W W W W Y Y Y Y Y Y Y Y Y Y O O O O O O O O O O R R R R R R R R R R G G G G G G G G G G B B B B B B B B B B"
+
+        Args:
+            face_chars (str): The faces to extract ('U', 'D', 'L', 'R', 'F', 'B').
+            
+        Returns:
+            str: A string representation of the faces of the cube.
+        """
+        return " ".join([self._get_face_map(face_char).flatten().tolist() for face_char in face_chars])
+
     def _get_face_map(self, face_char: str):
         """
         Extracts and formats a 2D representation of a specific face of the cube.
