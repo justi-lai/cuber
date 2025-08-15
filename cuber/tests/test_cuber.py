@@ -1005,6 +1005,204 @@ class TestCube(unittest.TestCase):
                                         f"Face {face} should be identical between dict and list initialization")
 
 
+class TestCubeMoveValidation(unittest.TestCase):
+    """Tests to validate that all moves work correctly from a solved state."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.cube = Cube()
+    
+    def test_all_basic_moves_from_solved_state(self):
+        """Test that all basic face moves work correctly from solved state."""
+        basic_moves = ["U", "U'", "U2", "D", "D'", "D2", "F", "F'", "F2", 
+                      "B", "B'", "B2", "R", "R'", "R2", "L", "L'", "L2"]
+        
+        failed_moves = []
+        for move in basic_moves:
+            with self.subTest(move=move):
+                cube = Cube()  # Fresh solved cube for each test
+                try:
+                    cube.turn(move)
+                    # Check that cube is still valid after the move
+                    self.assertTrue(cube.is_valid(), f"Move '{move}' created invalid cube state")
+                    
+                    # Check that no pieces disappeared by checking string output
+                    cube_str = str(cube)
+                    color_count = sum(1 for char in cube_str if char in 'WYGBRO')
+                    expected_colors = 54  # 6 faces * 9 stickers each
+                    if color_count != expected_colors:
+                        failed_moves.append(f"{move}: expected {expected_colors} colors, got {color_count}")
+                        
+                except Exception as e:
+                    failed_moves.append(f"{move}: {type(e).__name__}: {e}")
+        
+        if failed_moves:
+            self.fail(f"Failed moves from solved state:\n" + "\n".join(failed_moves))
+    
+    def test_all_wide_moves_from_solved_state(self):
+        """Test that all wide moves work correctly from solved state."""
+        wide_moves = ["u", "u'", "u2", "d", "d'", "d2", "f", "f'", "f2", 
+                     "b", "b'", "b2", "r", "r'", "r2", "l", "l'", "l2"]
+        
+        failed_moves = []
+        for move in wide_moves:
+            with self.subTest(move=move):
+                cube = Cube()  # Fresh solved cube for each test
+                try:
+                    cube.turn(move)
+                    # Check that cube is still valid after the move
+                    self.assertTrue(cube.is_valid(), f"Move '{move}' created invalid cube state")
+                    
+                    # Check that no pieces disappeared by checking string output
+                    cube_str = str(cube)
+                    color_count = sum(1 for char in cube_str if char in 'WYGBRO')
+                    expected_colors = 54  # 6 faces * 9 stickers each
+                    if color_count != expected_colors:
+                        failed_moves.append(f"{move}: expected {expected_colors} colors, got {color_count}")
+                        
+                except Exception as e:
+                    failed_moves.append(f"{move}: {type(e).__name__}: {e}")
+        
+        if failed_moves:
+            self.fail(f"Failed wide moves from solved state:\n" + "\n".join(failed_moves))
+    
+    def test_all_slice_moves_from_solved_state(self):
+        """Test that all slice moves work correctly from solved state."""
+        slice_moves = ["M", "M'", "M2", "E", "E'", "E2", "S", "S'", "S2"]
+        
+        failed_moves = []
+        for move in slice_moves:
+            with self.subTest(move=move):
+                cube = Cube()  # Fresh solved cube for each test
+                try:
+                    cube.turn(move)
+                    # Check that cube is still valid after the move
+                    self.assertTrue(cube.is_valid(), f"Move '{move}' created invalid cube state")
+                    
+                    # Check that no pieces disappeared by checking string output
+                    cube_str = str(cube)
+                    color_count = sum(1 for char in cube_str if char in 'WYGBRO')
+                    expected_colors = 54  # 6 faces * 9 stickers each
+                    if color_count != expected_colors:
+                        failed_moves.append(f"{move}: expected {expected_colors} colors, got {color_count}")
+                        
+                except Exception as e:
+                    failed_moves.append(f"{move}: {type(e).__name__}: {e}")
+        
+        if failed_moves:
+            self.fail(f"Failed slice moves from solved state:\n" + "\n".join(failed_moves))
+    
+    def test_all_rotation_moves_from_solved_state(self):
+        """Test that all cube rotation moves work correctly from solved state."""
+        rotation_moves = ["x", "x'", "x2", "y", "y'", "y2", "z", "z'", "z2"]
+        
+        failed_moves = []
+        for move in rotation_moves:
+            with self.subTest(move=move):
+                cube = Cube()  # Fresh solved cube for each test
+                try:
+                    cube.turn(move)
+                    # Check that cube is still valid after the move
+                    self.assertTrue(cube.is_valid(), f"Move '{move}' created invalid cube state")
+                    
+                    # Check that no pieces disappeared by checking string output
+                    cube_str = str(cube)
+                    color_count = sum(1 for char in cube_str if char in 'WYGBRO')
+                    expected_colors = 54  # 6 faces * 9 stickers each
+                    if color_count != expected_colors:
+                        failed_moves.append(f"{move}: expected {expected_colors} colors, got {color_count}")
+                        
+                    # Rotation moves should keep cube solved
+                    self.assertTrue(cube.is_solved(), f"Rotation move '{move}' should keep cube solved")
+                        
+                except Exception as e:
+                    failed_moves.append(f"{move}: {type(e).__name__}: {e}")
+        
+        if failed_moves:
+            self.fail(f"Failed rotation moves from solved state:\n" + "\n".join(failed_moves))
+    
+    def test_comprehensive_move_validation(self):
+        """Comprehensive test of all 54 moves to find any that cause issues."""
+        all_moves = [
+            "U", "U'", "U2", "D", "D'", "D2", "F", "F'", "F2", "B", "B'", "B2", 
+            "R", "R'", "R2", "L", "L'", "L2", "u", "u'", "u2", "d", "d'", "d2", 
+            "f", "f'", "f2", "b", "b'", "b2", "r", "r'", "r2", "l", "l'", "l2",
+            "M", "M'", "M2", "E", "E'", "E2", "S", "S'", "S2", 
+            "x", "x'", "x2", "y", "y'", "y2", "z", "z'", "z2"
+        ]
+        
+        # Store detailed information about each failed move
+        failed_moves = []
+        problem_details = {}
+        
+        for move in all_moves:
+            cube = Cube()  # Fresh solved cube for each test
+            try:
+                # Get initial state for comparison
+                initial_str = str(cube)
+                initial_colors = sum(1 for char in initial_str if char in 'WYGBRO')
+                
+                # Perform the move
+                cube.turn(move)
+                
+                # Get state after move
+                after_str = str(cube)
+                after_colors = sum(1 for char in after_str if char in 'WYGBRO')
+                
+                # Check for issues
+                issues = []
+                
+                if not cube.is_valid():
+                    issues.append("cube.is_valid() returned False")
+                
+                if after_colors != initial_colors:
+                    issues.append(f"Color count changed: {initial_colors} -> {after_colors}")
+                
+                # Check for empty spots in the actual color positions (not formatting)
+                # Extract just the color characters and check if any are missing
+                color_chars = ''.join(char for char in after_str if char in 'WYGBRO')
+                if len(color_chars) != 54:
+                    issues.append(f"Missing colors in output: expected 54, got {len(color_chars)}")
+                
+                # Check for any character that's not a valid color or formatting
+                valid_chars = set('WYGBRO\n-| ')
+                invalid_chars = set(after_str) - valid_chars
+                if invalid_chars:
+                    issues.append(f"String output contains invalid characters: {invalid_chars}")
+                
+                if issues:
+                    failed_moves.append(move)
+                    problem_details[move] = {
+                        'issues': issues,
+                        'before_str': initial_str,
+                        'after_str': after_str,
+                        'before_colors': initial_colors,
+                        'after_colors': after_colors
+                    }
+                    
+            except Exception as e:
+                failed_moves.append(move)
+                problem_details[move] = {
+                    'issues': [f"Exception: {type(e).__name__}: {e}"],
+                    'before_str': initial_str if 'initial_str' in locals() else "N/A",
+                    'after_str': "N/A",
+                    'before_colors': initial_colors if 'initial_colors' in locals() else 0,
+                    'after_colors': 0
+                }
+        
+        # If we found problems, report them in detail
+        if failed_moves:
+            error_report = ["DETAILED PROBLEM REPORT:"]
+            for move in failed_moves:
+                details = problem_details[move]
+                error_report.append(f"\nMove '{move}':")
+                error_report.append(f"  Issues: {', '.join(details['issues'])}")
+                error_report.append(f"  Colors before/after: {details['before_colors']}/{details['after_colors']}")
+                if len(details['after_str']) < 200:  # Only show if not too long
+                    error_report.append(f"  Output after move: {repr(details['after_str'])}")
+            
+            self.fail(f"Found {len(failed_moves)} problematic moves: {failed_moves}\n" + "\n".join(error_report))
+
 class TestCubeIntegration(unittest.TestCase):
     """Integration tests for cube operations."""
     

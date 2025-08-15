@@ -1040,7 +1040,7 @@ class Cube:
                 z_coord = z_offset
                 for x in range(3):
                     for y in range(3):
-                        self.grid[2-y, x, z_coord] = move_slices[x, y, z_offset]
+                        self.grid[y, 2-x, z_coord] = move_slices[x, y, z_offset]
             for cubie in self.grid[:, :, 0].flatten():
                 cubie.turn("B'")
             for cubie in self.grid[:, :, 1].flatten():
