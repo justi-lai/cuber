@@ -10,6 +10,15 @@ MOVES = [
     "M", "M'", "M2", "E", "E'", "E2", "S", "S'", "S2", "x", "x'", "x2", "y", "y'", "y2", "z", "z'", "z2"
 ]
 
+STICKERS_MAP = {
+    "W": "White",
+    "Y": "Yellow",
+    "O": "Orange",
+    "R": "Red",
+    "G": "Green",
+    "B": "Blue"
+}
+
 class Cube:
     """
     Represents the entire Rubik's Cube as a 3x3x3 grid of Cubie objects.
